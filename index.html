@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>玄機籤閣</title>
+<style>
+  :root{
+    --bg:#0c0a08; --bg2:#141009; --panel:#1a1510; --panel2:#221a12;
+    --gold:#d7b566; --gold-b:#f0d78d; --gold-d:#8a7340; --line:rgba(215,181,102,.28);
+    --red:#c0392b; --red-d:#8f2519; --red-glow:rgba(192,57,43,.45);
+    --paper:#f2e4c4; --paper2:#e8d3a6; --ink:#3c2f1e;
+    --up:#f0d78d; --down:#c98b78;
+    --ok:#e2b84f; --dim:#7a6a4d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #1c140c 0%, var(--bg) 55%, #060504 100%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.010) 0 1px, transparent 1px 4px);
+    color:var(--gold);
+    font-family:"PingFang TC","Heiti TC","Microsoft JhengHei",system-ui,sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .serif{font-family:"Kaiti TC","STKaiti","BiauKai","DFKai-SB","標楷體","Noto Serif TC",serif;}
+  .app{max-width:460px;margin:0 auto;padding:10px 14px 40px;}
+
+  /* ---------- Header ---------- */
+  .frame{position:relative;background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:14px;padding:13px 16px 11px;overflow:hidden;}
+  .frame::before,.frame::after{content:"";position:absolute;width:26px;height:26px;pointer-events:none;}
+  .frame::before{top:8px;left:8px;border-top:2px solid var(--gold);border-left:2px solid var(--gold);border-top-left-radius:4px;}
+  .frame::after{bottom:8px;right:8px;border-bottom:2px solid var(--gold);border-right:2px solid var(--gold);border-bottom-right-radius:4px;}
+  .lantern{position:absolute;top:8px;font-size:21px;filter:drop-shadow(0 0 8px rgba(200,40,30,.6));}
+  .lantern.l{left:16px;} .lantern.r{right:16px;}
+  .title{text-align:center;font-size:33px;font-weight:700;letter-spacing:4px;margin:0 0 1px;
+    background:linear-gradient(180deg,#f6e4a8,#d7b566 55%,#a5813e);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 22px rgba(215,181,102,.28);}
+  .subtitle{text-align:center;color:var(--gold-d);letter-spacing:9px;font-size:12px;margin-bottom:9px;padding-left:9px;}
+  .meta{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.28);
+    border:1px solid var(--line);border-radius:20px;padding:6px 11px;font-size:12.5px;color:var(--gold-b);white-space:nowrap;}
+  .chip small{color:var(--gold-d);}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:11px 0;}
+  .tab{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+    border-radius:12px;padding:10px 2px 9px;text-align:center;cursor:pointer;color:var(--gold);
+    transition:transform .12s, box-shadow .2s;}
+  .tab:active{transform:scale(.97);}
+  .tab .ic{font-size:20px;display:block;margin-bottom:4px;filter:grayscale(.15);}
+  .tab .tx{font-size:13px;letter-spacing:0;}
+  .tab.on{background:linear-gradient(180deg,#f2da8e,#cba455);color:#3a2c12;border-color:#e7cd82;
+    box-shadow:0 0 18px rgba(215,181,102,.4);font-weight:700;}
+  .tab.on .ic{filter:none;}
+
+  /* ---------- Panel ---------- */
+  .panel{background:linear-gradient(180deg,var(--panel),#160f0a);border:1px solid var(--line);
+    border-radius:14px;padding:16px 14px 18px;}
+  .view{display:none;} .view.on{display:block;animation:fade .3s;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .ask{width:100%;background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:10px;
+    color:var(--gold-b);font-size:15px;padding:14px 14px;resize:none;font-family:inherit;line-height:1.5;}
+  .ask::placeholder{color:#6e5f45;} .ask:focus{outline:none;border-color:var(--gold-d);}
+
+  /* ---------- Reel ---------- */
+  .reel{position:relative;margin:14px auto 6px;max-width:258px;height:258px;border-radius:16px;
+    border:2px solid var(--red);box-shadow:0 0 22px var(--red-glow),inset 0 0 40px rgba(0,0,0,.6);
+    background:radial-gradient(120% 100% at 50% 50%,#1c1712,#0b0806);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
+  .reel .row{width:100%;text-align:center;transition:opacity .2s;}
+  .reel .row.mid{padding:6px 0;}
+  .reel .num{font-weight:700;line-height:1;}
+  .reel .r-top .num,.reel .r-bot .num{font-size:40px;color:var(--dim);opacity:.5;}
+  .reel .r-mid .num{font-size:96px;color:var(--gold-b);text-shadow:0 0 26px rgba(215,181,102,.45);}
+  .reel .lab{font-size:14px;color:var(--gold-d);letter-spacing:3px;margin-top:2px;}
+  .reel .r-mid .lab{color:var(--gold);font-size:15px;}
+  .reel .div{width:78%;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:4px 0;}
+  /* hexagram in reel */
+  .reel .r-top .hex,.reel .r-bot .hex{opacity:.45;transform:scale(.62);}
+  .reel .r-mid .hexname{font-size:34px;color:var(--gold-b);letter-spacing:2px;margin-top:8px;
+    text-shadow:0 0 20px rgba(215,181,102,.4);font-weight:700;}
+
+  .hex{display:inline-flex;flex-direction:column;gap:5px;align-items:center;}
+  .yao{height:9px;width:88px;display:flex;justify-content:space-between;}
+  .yao.yang{background:linear-gradient(180deg,#f0d78d,#c6a24e);border-radius:2px;}
+  .yao.yin span{width:40%;background:linear-gradient(180deg,#f0d78d,#c6a24e);border-radius:2px;}
+  .reel .r-mid .hex .yao{height:11px;width:104px;}
+
+  /* ---------- Buttons ---------- */
+  .btn{display:block;width:70%;max-width:230px;margin:14px auto 4px;border:none;cursor:pointer;
+    padding:16px;border-radius:30px;font-size:19px;letter-spacing:8px;font-weight:700;
+    padding-left:calc(8px + 8px);transition:transform .12s,filter .2s;font-family:inherit;}
+  .btn:active{transform:scale(.96);}
+  .btn.red{background:linear-gradient(180deg,#d8493a,#a72c1f);color:#fff8ee;
+    box-shadow:0 4px 18px var(--red-glow),inset 0 1px 0 rgba(255,255,255,.2);}
+  .btn.gold{background:linear-gradient(180deg,#f2da8e,#c6a24e);color:#3a2c12;
+    box-shadow:0 4px 18px rgba(215,181,102,.35),inset 0 1px 0 rgba(255,255,255,.4);}
+  .btn[disabled]{filter:grayscale(.5) brightness(.8);pointer-events:none;}
+
+  /* ---------- Result slip ---------- */
+  .slip{margin-top:18px;background:linear-gradient(180deg,var(--paper),var(--paper2));
+    color:var(--ink);border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5);
+    animation:fade .35s;}
+  .slip .stub{height:14px;background:repeating-linear-gradient(90deg,var(--red) 0 12px,transparent 12px 24px);}
+  .slip .body{padding:16px 16px 18px;}
+  .slip .head{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    border-bottom:1px dashed rgba(120,60,20,.4);padding-bottom:10px;margin-bottom:10px;}
+  .slip .no{font-size:26px;font-weight:700;color:#7a1e14;letter-spacing:2px;}
+  .slip .gz{font-size:13px;color:#8a6a3a;margin-top:2px;}
+  .badge{font-size:17px;font-weight:700;padding:6px 14px;border-radius:8px;color:#fff;letter-spacing:2px;white-space:nowrap;}
+  .b-上上籤{background:#b3261a;} .b-上吉籤{background:#c65a10;}
+  .b-中吉籤{background:#b8860b;} .b-中平籤{background:#6f7a4a;} .b-下下籤{background:#5a4a3a;}
+  .poem{text-align:center;font-size:20px;line-height:1.9;letter-spacing:2px;color:#4a2f18;margin:10px 0 14px;}
+  .poem div{white-space:nowrap;}
+  .jie-t{font-size:13px;font-weight:700;color:#7a1e14;letter-spacing:2px;border-left:3px solid #b3261a;padding-left:8px;margin:12px 0 6px;}
+  .jie{font-size:14.5px;line-height:1.75;color:#3c2f1e;}
+  .xiang{display:flex;align-items:center;gap:14px;margin:6px 0 12px;}
+  .xiang .hbox{background:rgba(60,30,10,.06);border:1px solid rgba(120,60,20,.25);border-radius:8px;padding:10px 14px;}
+  .xiang .hbox .yao.yang{background:linear-gradient(180deg,#8a4a1a,#5a2f12);}
+  .xiang .hbox .yao.yin span{background:linear-gradient(180deg,#8a4a1a,#5a2f12);}
+  .xiang .info .nm{font-size:24px;font-weight:700;color:#7a1e14;letter-spacing:2px;}
+  .xiang .info .sub{font-size:13px;color:#8a6a3a;margin-top:3px;}
+
+  /* ---------- Jiaobei ---------- */
+  .blocks{display:flex;gap:26px;justify-content:center;margin:22px 0 10px;perspective:600px;}
+  .blk{width:120px;height:150px;position:relative;display:flex;align-items:center;justify-content:center;
+    border-radius:50% 50% 46% 46%/62% 62% 40% 40%;font-size:32px;font-weight:700;color:rgba(255,255,255,.92);
+    box-shadow:inset 0 -12px 26px rgba(0,0,0,.4),inset 0 8px 18px rgba(255,255,255,.18),0 8px 20px rgba(0,0,0,.5);
+    transform-style:preserve-3d;transition:transform .1s;}
+  .blk.red{background:radial-gradient(120% 90% at 40% 30%,#e05a48,#b12a1c 70%);}
+  .blk.brown{background:radial-gradient(120% 90% at 40% 30%,#8a7a52,#5c4e2f 70%);color:rgba(255,255,255,.8);}
+  .blk .face{text-shadow:0 1px 3px rgba(0,0,0,.4);}
+  @keyframes tumble{
+    0%{transform:translateY(0) rotateX(0);}
+    20%{transform:translateY(-46px) rotateX(220deg);}
+    45%{transform:translateY(6px) rotateX(520deg);}
+    62%{transform:translateY(-22px) rotateX(760deg);}
+    80%{transform:translateY(4px) rotateX(1000deg);}
+    100%{transform:translateY(0) rotateX(1080deg);}
+  }
+  .blk.tumbling{animation:tumble .85s cubic-bezier(.3,.7,.3,1);}
+  .blk.tumbling.b2{animation-duration:.95s;}
+
+  .verdict{text-align:center;margin:8px 0 4px;min-height:78px;}
+  .verdict .name{font-size:46px;font-weight:700;letter-spacing:8px;padding-left:8px;
+    background:linear-gradient(180deg,#f6e4a8,#d7b566);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .verdict .desc{font-size:15px;color:var(--gold-b);letter-spacing:1px;margin-top:6px;}
+  .verdict.v-聖 .name{background:linear-gradient(180deg,#f6e4a8,#d7b566);-webkit-background-clip:text;color:transparent;}
+  .verdict.v-笑 .name{background:linear-gradient(180deg,#e8c98a,#b89a56);-webkit-background-clip:text;color:transparent;}
+  .verdict.v-陰 .name{background:linear-gradient(180deg,#b9a6c9,#8f7aa0);-webkit-background-clip:text;color:transparent;}
+  .verdict .empty{color:var(--gold-d);font-size:16px;letter-spacing:2px;padding-top:26px;}
+
+  .tally{display:flex;justify-content:center;gap:22px;margin:14px 0 4px;font-size:15px;color:var(--gold-b);}
+  .tally b{color:var(--gold-b);font-size:19px;margin-left:3px;}
+  .tally .g{color:#e2b84f;}
+  .streak{text-align:center;font-size:13px;color:var(--gold-d);margin:2px 0 0;min-height:18px;letter-spacing:1px;}
+
+  .subrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .sbtn{background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--gold);border-radius:10px;
+    padding:13px;font-size:14px;letter-spacing:1px;cursor:pointer;font-family:inherit;}
+  .sbtn:active{transform:scale(.97);}
+
+  /* settings modal */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:20;padding:20px;}
+  .mask.on{display:flex;animation:fade .2s;}
+  .modal{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+    border-radius:14px;padding:20px;max-width:340px;width:100%;}
+  .modal h3{margin:0 0 14px;font-size:18px;color:var(--gold-b);letter-spacing:2px;text-align:center;}
+  .opt{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--gold-b);}
+  .opt:last-of-type{border-bottom:none;}
+  .sw{width:48px;height:26px;border-radius:14px;background:#3a3128;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+  .sw.on{background:var(--red);}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#f0e6d2;transition:left .2s;}
+  .sw.on::after{left:25px;}
+  .foot{font-size:12px;color:var(--gold-d);line-height:1.6;margin-top:14px;}
+  .close{margin-top:16px;}
+
+  /* ---------- 日期控制 + 農民曆 ---------- */
+  .daterow{display:flex;align-items:center;gap:8px;margin:2px 0 12px;flex-wrap:wrap;}
+  .seg{display:inline-flex;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:10px;padding:3px;}
+  .segbtn{background:transparent;border:none;color:var(--gold-d);font-family:inherit;font-size:14px;
+    padding:7px 15px;border-radius:8px;cursor:pointer;letter-spacing:2px;}
+  .segbtn.on{background:linear-gradient(180deg,#f2da8e,#cba455);color:#3a2c12;font-weight:700;}
+  .dpick{background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:10px;color:var(--gold-b);
+    font-family:inherit;font-size:15px;padding:9px 12px;}
+  .dpick.grow{flex:1;min-width:0;}
+  .dpick::-webkit-calendar-picker-indicator{filter:invert(.75) sepia(.6) saturate(3) hue-rotate(2deg);cursor:pointer;}
+  .navd{width:40px;height:40px;flex-shrink:0;background:rgba(0,0,0,.28);border:1px solid var(--line);
+    color:var(--gold-b);border-radius:10px;font-size:22px;cursor:pointer;line-height:1;font-family:inherit;}
+  .navd:active,.segbtn:active{transform:scale(.96);}
+
+  .alma{background:linear-gradient(180deg,var(--paper),var(--paper2));color:var(--ink);border-radius:12px;
+    overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5);animation:fade .3s;}
+  .alma .top{display:flex;align-items:stretch;border-bottom:1px solid rgba(120,60,20,.25);}
+  .alma .big{flex:0 0 92px;background:linear-gradient(180deg,#b3261a,#8f1c12);color:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;}
+  .alma .big .d{font-size:46px;font-weight:700;line-height:1;}
+  .alma .big .md{font-size:13px;letter-spacing:2px;margin-top:5px;opacity:.95;}
+  .alma .big .wk{font-size:12px;margin-top:2px;opacity:.85;}
+  .alma .head2{flex:1;padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px;}
+  .alma .lnr{font-size:22px;font-weight:700;color:#7a1e14;letter-spacing:1px;}
+  .alma .gz{font-size:14px;color:#6a4a2a;}
+  .alma .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;}
+  .alma .tag{font-size:12px;background:rgba(120,60,20,.1);border:1px solid rgba(120,60,20,.25);
+    border-radius:6px;padding:3px 8px;color:#5a3a1a;}
+  .alma .yj{display:grid;grid-template-columns:1fr 1fr;}
+  .alma .yj .col{padding:12px 14px;}
+  .alma .yj .col.y{border-right:1px solid rgba(120,60,20,.2);}
+  .alma .ht{font-size:15px;font-weight:700;letter-spacing:3px;margin-bottom:7px;display:inline-block;
+    padding:2px 12px;border-radius:6px;color:#fff;}
+  .alma .y .ht{background:#3f7a3a;} .alma .j .ht{background:#8f2519;}
+  .alma .items{font-size:14px;line-height:1.85;color:#3c2f1e;}
+  .alma .foot{padding:11px 14px;border-top:1px dashed rgba(120,60,20,.4);display:flex;flex-wrap:wrap;
+    gap:7px 15px;font-size:13px;color:#5a3a1a;}
+  .alma .foot b{color:#7a1e14;font-weight:700;}
+  .alma .note{padding:8px 14px 12px;font-size:11px;color:#9a7a4a;line-height:1.5;}
+
+  /* ---------- 願望列 / 分享 / toast / 白話提示 ---------- */
+  .wish{font-size:13px;color:#7a1e14;background:rgba(120,60,20,.06);border-radius:6px;
+    padding:7px 11px;margin-bottom:10px;border-left:3px solid #b3261a;word-break:break-word;}
+  .acts{display:flex;gap:10px;margin-top:14px;}
+  .act{flex:1;border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;letter-spacing:2px;
+    padding:12px;border-radius:10px;}
+  .act:active{transform:scale(.97);}
+  .act.share{background:linear-gradient(180deg,#d8493a,#a72c1f);color:#fff8ee;
+    box-shadow:0 3px 12px var(--red-glow);}
+  .act.ghost{background:rgba(120,60,20,.07);border:1px solid rgba(120,60,20,.3);color:#7a1e14;}
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(18px);
+    background:rgba(20,15,10,.95);border:1px solid var(--line);color:var(--gold-b);
+    padding:11px 20px;border-radius:22px;font-size:14px;opacity:0;pointer-events:none;
+    transition:.25s;z-index:30;max-width:80%;text-align:center;}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  .alma .tag{cursor:pointer;transition:background .15s;}
+  .alma .tag:active{background:rgba(120,60,20,.22);}
+  .alma .foot span[data-tip]{cursor:pointer;border-bottom:1px dotted rgba(120,60,20,.5);}
+  .alma .tip{margin:0 14px;padding:10px 0;font-size:13px;color:#4a3420;line-height:1.65;
+    border-top:1px dashed rgba(120,60,20,.3);}
+  .alma .tip b{color:#7a1e14;}
+  .alma .more{background:none;border:none;color:#8f2519;font-family:inherit;font-size:13px;
+    cursor:pointer;padding:2px 0;text-decoration:underline;letter-spacing:1px;}
+
+  :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;}
+  @media(prefers-reduced-motion:reduce){
+    .blk.tumbling{animation-duration:.15s;}
+    *{animation-duration:.15s !important;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="frame">
+    <span class="lantern l">🏮</span>
+    <span class="lantern r">🏮</span>
+    <div class="title serif">玄機籤閣</div>
+    <div class="subtitle serif">求 籤 · 抽 卦 · 擲 筊</div>
+    <div class="meta">
+      <span class="chip">📅 <span id="mDate"></span></span>
+      <span class="chip">🧭 <span id="mGz"></span></span>
+      <span class="chip">🌿 <small>節氣</small> <span id="mJq"></span></span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab on" data-v="qian"><span class="ic">🎍</span><span class="tx serif">求籤</span></div>
+    <div class="tab" data-v="gua"><span class="ic">☯️</span><span class="tx serif">抽卦</span></div>
+    <div class="tab" data-v="jiao"><span class="ic">🥮</span><span class="tx serif">擲筊</span></div>
+    <div class="tab" data-v="almanac"><span class="ic">📜</span><span class="tx serif">農民曆</span></div>
+  </div>
+
+  <div class="panel">
+
+    <!-- ===== 每日求籤 ===== -->
+    <div class="view on" id="v-qian">
+      <textarea class="ask" id="qAsk" rows="1" placeholder="心中默念所求之事（可留空）…"></textarea>
+      <div class="daterow">
+        <div class="seg">
+          <button class="segbtn on" id="qModeToday">今日</button>
+          <button class="segbtn" id="qModePick">自選</button>
+        </div>
+        <input type="date" class="dpick grow" id="qDate" style="display:none">
+      </div>
+      <div class="reel" id="qReel">
+        <div class="row r-top"><span class="num">—</span></div>
+        <div class="div"></div>
+        <div class="row r-mid mid"><span class="num">籤</span><div class="lab">凝神搖籤</div></div>
+        <div class="div"></div>
+        <div class="row r-bot"><span class="num">—</span></div>
+      </div>
+      <button class="btn red serif" id="qBtn">搖 籤</button>
+      <div id="qSlip"></div>
+    </div>
+
+    <!-- ===== 易經抽卦 ===== -->
+    <div class="view" id="v-gua">
+      <textarea class="ask" id="gAsk" rows="1" placeholder="凝神靜念，問一卦（可留空）…"></textarea>
+      <div class="reel" id="gReel">
+        <div class="row r-top"><span class="num">☰</span></div>
+        <div class="div"></div>
+        <div class="row r-mid mid"><div class="hexname">易經</div></div>
+        <div class="div"></div>
+        <div class="row r-bot"><span class="num">☷</span></div>
+      </div>
+      <button class="btn gold serif" id="gBtn">起 卦</button>
+      <div id="gSlip"></div>
+    </div>
+
+    <!-- ===== 擲筊請示 ===== -->
+    <div class="view" id="v-jiao">
+      <textarea class="ask" id="jAsk" rows="1" placeholder="向神明請示之事（可留空）…"></textarea>
+      <div class="blocks">
+        <div class="blk red" id="blk1"><span class="face">凸</span></div>
+        <div class="blk brown" id="blk2"><span class="face">平</span></div>
+      </div>
+      <div class="verdict" id="jVerdict"><div class="empty">凝神請示後擲筊</div></div>
+      <button class="btn red serif" id="jBtn">擲 筊</button>
+      <div class="tally">
+        <span>聖筊 <b class="g" id="tSheng">0</b></span>
+        <span>笑筊 <b id="tXiao">0</b></span>
+        <span>陰筊 <b id="tYin">0</b></span>
+      </div>
+      <div class="streak" id="jStreak"></div>
+      <div class="subrow">
+        <button class="sbtn serif" id="jReset">↻ 重新請示</button>
+        <button class="sbtn serif" id="jSet">⚙ 筊機設定</button>
+      </div>
+    </div>
+
+    <!-- ===== 農民曆 ===== -->
+    <div class="view" id="v-almanac">
+      <div class="daterow">
+        <button class="navd" id="aPrev" aria-label="前一天">‹</button>
+        <input type="date" class="dpick grow" id="aDate">
+        <button class="navd" id="aNext" aria-label="後一天">›</button>
+        <button class="navd" id="aToday" style="width:auto;padding:0 14px;font-size:14px;letter-spacing:2px;">今日</button>
+      </div>
+      <div id="aBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- settings modal -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3 class="serif">筊機設定</h3>
+    <div class="opt"><span>連續三聖筊才算定案</span><div class="sw" id="swStreak"></div></div>
+    <div class="opt"><span>誠心加持（略偏聖筊）</span><div class="sw" id="swBless"></div></div>
+    <div class="foot">傳統擲筊：一平一凸為聖筊（允）、兩平為笑筊（未明示，宜再請示）、兩凸為陰筊（不允）。開啟「連三聖筊」後，需連續三次聖筊神明方視為明確應允。</div>
+    <button class="btn gold serif close" id="setClose">確 定</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="lunar.js"></script>
+<script>
+"use strict";
+
+/* ============================================================
+   資料層（可替換）
+   1) QIAN：六十甲子籤 — 流通版，正式對外請以貴宮廟版本校對
+   2) GUA ：易經 64 卦 — 卦名／上下卦／卦辭為經典原文
+   ============================================================ */
+
+// —— 六十甲子籤 —— {干支, 吉凶, 詩[4], 解}
+const QIAN = [
+ ["甲子","上上籤",["日出便見風雲散","光明清淨照世間","一向前途通大道","萬事清吉保平安"],"雲開見日，諸事漸入佳境。前途通達，守正持恆可保平安；求謀、行人、疾病多見轉順。"],
+ ["乙丑","上吉籤",["於今此景正當時","看看欲吐百花魁","若能遇得春色到","一洒清吉脫塵埃"],"時運將轉、花開有期。眼前雖淡，逢貴則發，宜耐心待時、勿急於一時。"],
+ ["丙寅","上吉籤",["勸君把定心莫虛","天注衣祿自有餘","和合重重常吉慶","時來終遇得明珠"],"定心守分，福祿自足。和氣生財，時到自有佳音；宜安守本業，忌貪多務得。"],
+ ["丁卯","中吉籤",["祈保分明得所宜","相逢誰料不多時","舟中風急難行棹","更遇顛狂浪拍時"],"眼前多阻、時機未穩。宜暫緩、先避風浪，待勢定再行；謀事勿冒進。"],
+ ["戊辰","中平籤",["陽世作事未和同","恰是行舟遇顛風","波浪重重驚欲散","勸君作事且從容"],"人事未和、內外有阻。宜沉住氣、從容應對，先理順關係再圖進展。"],
+ ["己巳","中吉籤",["福如東海壽如山","君爾何須嘆苦難","命內自然逢大吉","祈保分明得平安"],"眼前雖有難處，命中自有轉機。宜守正修德、誠心以待，苦盡自見甘來。"],
+ ["庚午","上吉籤",["運逢得意身顯變","君爾身中皆有益","一向前途無難事","決意之中保清吉"],"運勢轉旺、身心得益。前途少阻，宜把握良機、決意而行，諸事清吉。"],
+ ["辛未","中平籤",["君爾何須問聖跡","自己心中皆有益","於今且看月中旬","凡事必然見太平"],"答案本在己心。宜自省而後定，靜待月中時節，事可漸趨平順。"],
+ ["壬申","中吉籤",["綠柳蒼蒼正當時","任君此去作乾坤","花果結實無殘謝","福祿自有慶家門"],"正當其時、根基已穩。宜放手作為、勤耕不輟，成果可期、家門有慶。"],
+ ["癸酉","中平籤",["雲開月出正分明","不須進退問前程","婚姻皆由天注定","和合清吉萬事成"],"雲散月明、方向漸清。凡事天定人為各半，宜順其自然、和合以成。"],
+ ["甲戌","上吉籤",["東西南北不堪行","前途此事正得宜","勸君把定莫煩惱","雲開月出照天明"],"四方雖阻，正途卻宜。宜守定不亂、莫生煩憂，時到雲開自見光明。"],
+ ["乙亥","中吉籤",["茫茫渡水復登山","此去求謀到寶山","若得貴人相引處","那時方得覩青天"],"路途雖遠、需歷艱辛。得貴人相助則成，宜廣結善緣、勿獨力硬撐。"],
+ ["丙子","中平籤",["時運未通莫強求","如今且守待時流","雲遮月色終須顯","撥開雲霧見高樓"],"時運未至，強求無益。宜按兵守成、養精蓄銳，待雲開霧散再進。"],
+ ["丁丑","上吉籤",["意中若問神仙路","勸爾當初莫心高","往事枉費求神卜","勸君作事在良謀"],"謀事在人、成事在天。宜放下高慢、腳踏實地，以良謀善策取勝。"],
+ ["戊寅","中吉籤",["行藏出入礙重重","舉步艱難日日空","若得貴人來指引","那時財寶喜相逢"],"眼前阻礙多、進退維谷。得明師貴人點撥則通，宜謙下求教、勿逞強。"],
+ ["己卯","中吉籤",["龍虎相隨在深山","君爾何須背後看","一到虎頭生兩翼","飛騰上天得自然"],"時機成熟、如虎添翼。宜勇往直前、莫瞻前顧後，自能水到渠成。"],
+ ["庚辰","上吉籤",["蒙君恩義重如山","日久情深意自安","若能遇得逢知己","一鏡分明得兩安"],"恩義深厚、日久情堅。宜以誠相待、珍惜知己，人和則兩全其美。"],
+ ["辛巳","中平籤",["有心作福莫遲疑","求名清吉正當時","此事必能成會合","財寶自然喜相隨"],"作福行善莫遲疑。求名正逢其時，宜積極把握，財氣自隨誠心而來。"],
+ ["壬午","上上籤",["一輪明月照天邊","不用勞心用意懸","春色滿園花似錦","前途萬里福綿綿"],"明月當空、前途坦蕩。不必憂心懸念，宜放懷經營，福運綿長。"],
+ ["癸未","中吉籤",["君爾寬心且自由","門庭自有好來由","悶悶昏昏莫怨嘆","把定身心莫外求"],"心寬則境轉、福自門來。宜穩住身心、莫怨莫慌，答案本在自身。"],
+ ["甲申","中平籤",["當春久雨喜開晴","玉兔金烏漸漸明","舊事消散新事至","看看發福向前程"],"久雨初晴、否極泰來。舊事漸消、新機將至，宜整裝再出發、迎向前程。"],
+ ["乙酉","上吉籤",["花開結果自然成","不須祈禱問神明","自有貴人相扶助","何須尋覓向他人"],"花開自然結果、水到自然渠成。貴人扶助已在身邊，宜安心行事、勿他求。"],
+ ["丙戌","中吉籤",["君今百事且隨緣","水到渠成聽自然","莫嘆年來不如意","喜逢新歲百般全"],"百事隨緣、順水行舟。莫嘆昔日不順，新局將至、諸事漸全。"],
+ ["丁亥","上上籤",["營謀作事在人為","勸君積善福自隨","若能守正行方便","前途決意保無危"],"謀事在人、積善得福。宜守正行方便、廣結善緣，前程決意可保無虞。"],
+ ["戊子","中吉籤",["風雲致雨落洋洋","天災時氣必有傷","命內此事難和合","更逢一足出外鄉"],"時運有變、人事難和。宜謹慎守成、防範風險，必要時另謀他途、勿強留。"],
+ ["己丑","中平籤",["枯木可惜未逢春","如今且守待運通","不須進退問神明","一到時來自然逢"],"枯木待春、時未全通。宜按兵守分、莫問進退，時到自然遇合。"],
+ ["庚寅","上吉籤",["漸漸看此月中和","過後須防未足多","改變顏色前途去","凡事必定見無魔"],"漸入佳境、宜防盈滿。宜及時調整、順勢求變，前途少阻、諸事漸順。"],
+ ["辛卯","中吉籤",["女子當年嫁二夫","前番作事總糊塗","若逢牛鼠交承日","夫婦團圓笑一呼"],"前事雖有反覆，來時可望團圓。宜記取教訓、慎於抉擇，遇時可成。"],
+ ["壬辰","上吉籤",["君爾何須問聖跡","自有貴人相扶持","若能保守身心正","財祿自然滾滾來"],"貴人扶持已至。宜守身心之正、勤謹行事，財祿自然接踵而來。"],
+ ["癸巳","中平籤",["勸君切莫向他求","似鶴飛翔在九秋","若問前途歸何處","自然清吉向前流"],"求己勝於求人。宜自立自強、順勢而流，前途自有清吉去處。"],
+ ["甲午","上上籤",["水中撈月鏡中花","何勞魂夢向天涯","若逢牛角人相遇","財寶重重見發家"],"虛實之間、宜辨真假。遇貴則發，宜腳踏實地、勿逐虛名，家業可興。"],
+ ["乙未","中吉籤",["福祿自有慶家門","積善之家慶有餘","勸君早修陰騭事","前途決意得安舒"],"積善之家、福慶有餘。宜早修善行、廣積陰德，前途安舒可期。"],
+ ["丙申","中平籤",["守舊隨時待運通","不須勞碌向前程","若能安分身無事","風恬浪靜自然通"],"宜守舊待時、安分無爭。不必勞碌強求，風平浪靜之時自然通達。"],
+ ["丁酉","上吉籤",["得意宜逢隴上時","前途變化喜相隨","雲開月出分明照","一片清光照九重"],"正當得意、變化皆吉。宜把握良機、順勢而進，前程如月出當空。"],
+ ["戊戌","中吉籤",["漸漸日中且待時","青雲有路少人知","那時得意分明處","一舉登科天下知"],"青雲有路、時未全顯。宜潛心積累、靜待時機，一朝得意可揚名。"],
+ ["己亥","上上籤",["君今庚甲未亨通","且向江頭作釣翁","玉兔重生應發跡","萬人頭上逞英雄"],"時未亨通、宜韜光養晦。厚積薄發，時到重生、可出人頭地。"],
+ ["庚子","中平籤",["夫婦相邀盡百年","誰知半路有憂煎","若能誠心重許願","漸漸雲開見月圓"],"和合之中偶有波折。宜以誠相待、重修其好，雲開自見月圓。"],
+ ["辛丑","中吉籤",["寶劍鋒從磨礪出","梅花香自苦寒來","若能耐得辛苦過","終須富貴到君家"],"寶劍梅花、皆自磨礪。宜耐得艱苦、堅持不懈，終得富貴臨門。"],
+ ["壬寅","上吉籤",["晉水河邊有一釣","一竿風月自逍遙","若能守正常清淨","富貴榮華自可招"],"守正清淨、心閒事順。宜安於本分、逍遙自得，富貴榮華自來相招。"],
+ ["癸卯","中吉籤",["禍福無門人自招","若能積善福來報","前途禍福在人為","切莫怨天與尤人"],"禍福由己、積善得報。宜反求諸己、勤修善行，莫怨天尤人。"],
+ ["甲辰","上上籤",["君家門戶漸光輝","事業經營稱心懷","若問前途歸何處","財源廣進福齊來"],"門庭漸旺、事業稱心。宜順勢擴展、廣納財源，福運齊至。"],
+ ["乙巳","中平籤",["時來運轉喜非常","舊事重新別有方","把定身心莫外慮","雲收霧散見朝陽"],"時來運轉、宜守莫慌。舊事翻新自有出路，雲收霧散見朝陽。"],
+ ["丙午","中吉籤",["朝來報喜事非常","一喜元來百事昌","若得貴人相引處","前途萬里任翱翔"],"喜訊將至、百事漸昌。得貴人引薦則展，宜把握機緣、放懷翱翔。"],
+ ["丁未","上吉籤",["一年之計在於春","凡事宜早莫因循","若能勤謹無虛度","富貴榮華指日臨"],"一年之計在於早。宜勤謹惜時、莫因循怠惰，富貴可指日而待。"],
+ ["戊申","中平籤",["雲遮月色暗沉沉","且守清貧待運亨","莫嘆時來多蹇滯","終須撥雲見青天"],"雲遮月暗、時未全亨。宜安守清貧、養志待時，終有撥雲見日之日。"],
+ ["己酉","上上籤",["富貴由天莫強求","隨緣作事得優游","若能守己安本分","福祿綿綿樂自由"],"富貴由天、隨緣自在。宜安守本分、優游行事，福祿綿長、身心自在。"],
+ ["庚戌","中吉籤",["守分安常暗自成","何須勞碌問前程","一朝時運相逢處","自有貴人來助成"],"守分安常、暗中有成。不必勞碌問卜，時運到時貴人自助。"],
+ ["辛亥","中平籤",["風波之後見安平","莫嘆前途多不通","若得時來相助處","自然吉慶到家庭"],"風波過後見安平。眼前雖阻，時來得助，吉慶自到家庭。"],
+ ["壬子","上吉籤",["月到中秋分外明","前途發達喜相迎","若能把定身心正","名利雙收慶有成"],"月到中秋、前途發達。宜守身心之正、勤謹經營，名利雙收、事有所成。"],
+ ["癸丑","中吉籤",["枯枝發芽再逢春","舊事重興別樣新","若得貴人相扶助","財源滾滾自然臨"],"枯枝發芽、舊事重興。得貴人扶助則成，宜把握新機、財源自臨。"],
+ ["甲寅","上上籤",["雲開霧散月光輝","萬里晴空任鳥飛","若問前途何所往","榮華富貴四時齊"],"雲開霧散、晴空萬里。前途坦蕩、任意翱翔，榮華富貴四季常齊。"],
+ ["乙卯","中平籤",["守舊安常且待時","不須進退問神祇","一朝運到雲開處","自有清光照九枝"],"守舊安常、靜待其時。不必進退問卜，運到雲開自見清光。"],
+ ["丙辰","中吉籤",["莫嘆前途多蹇滯","時來運轉自然通","若能積善行方便","富貴榮華樂在中"],"眼前雖滯、時來自通。宜積善行方便、廣結善緣，富貴榮華樂在其中。"],
+ ["丁巳","上吉籤",["日麗中天照四方","前途發達喜非常","若能守正勤修德","名利雙全福壽長"],"日麗中天、前途發達。宜守正勤德、廣積善行，名利雙全、福壽綿長。"],
+ ["戊午","中平籤",["風恬浪靜好行舟","把定身心莫外求","一到時來雲散處","自然清吉樂悠悠"],"風恬浪靜、正好行舟。宜守定身心、順勢而行，時到雲散、清吉悠然。"],
+ ["己未","中吉籤",["守己安分待運通","不須勞碌向前衝","一朝時運相逢日","自有貴人來助功"],"守己安分、待運自通。不必勞碌強衝，時運相逢貴人自助其功。"],
+ ["庚申","上上籤",["春回大地萬花新","事業經營稱意成","若問前途歸何處","財源廣進福盈門"],"春回大地、萬象更新。事業稱意、財源廣進，福運盈滿門庭。"],
+ ["辛酉","中吉籤",["雲開月出見分明","舊事重新別有情","若得貴人相扶助","前途萬里自然亨"],"雲開月出、舊事翻新。得貴人扶助則亨，宜把握機緣、放懷前行。"],
+ ["壬戌","中平籤",["守分安常暗裡成","莫嫌時運未曾亨","一朝雲散天開處","自有清光照太平"],"守分安常、暗中有成。莫嫌時運未亨，雲散天開自見太平。"],
+ ["癸亥","上吉籤",["否極泰來事事新","前途發達福臨門","若能守正勤修善","名利雙收樂萬春"],"否極泰來、事事更新。宜守正勤善、腳踏實地，名利雙收、福樂長春。"]
+];
+
+// —— 易經 64 卦 —— {n, name, upper, lower, 卦辭, 解}
+const TRI = {乾:[1,1,1],坤:[0,0,0],震:[1,0,0],艮:[0,0,1],離:[1,0,1],坎:[0,1,0],兌:[1,1,0],巽:[0,1,1]};
+const NATURE = {乾:"天",坤:"地",震:"雷",艮:"山",離:"火",坎:"水",兌:"澤",巽:"風"};
+const GUA = [
+ [1,"乾","乾","乾","元亨利貞。","純陽剛健、龍德當令。宜積極進取，惟盛極須防亢滿；守正則利。"],
+ [2,"坤","坤","坤","元亨，利牝馬之貞。","柔順承載、厚德載物。宜隨勢而行、以靜制動，踏實積累必有所成。"],
+ [3,"屯","坎","震","元亨利貞，勿用有攸往。","萬事起頭難，如草木初生。宜守不宜進，先立根基、廣結助力。"],
+ [4,"蒙","艮","坎","亨。匪我求童蒙，童蒙求我。","蒙昧待啟。宜虛心求教學習，放下己見、誠心請益則通。"],
+ [5,"需","坎","乾","有孚，光亨，貞吉。","時機未到，宜等待。守正持誠、養精蓄銳，勿躁進。"],
+ [6,"訟","乾","坎","有孚窒，惕，中吉，終凶。","爭訟之象。宜和解退讓，剛則有失，凡事以和為貴。"],
+ [7,"師","坤","坎","貞，丈人吉，無咎。","興師動眾之象。宜有紀律、任賢能，師出有名則吉。"],
+ [8,"比","坎","坤","吉。原筮元永貞，無咎。","親比團結之象。宜擇善而從、依附明主，及早歸附為吉。"],
+ [9,"小畜","巽","乾","亨。密雲不雨，自我西郊。","小有積蓄、力量未足。宜守成蓄勢、以柔濟剛，暫難大展。"],
+ [10,"履","乾","兌","履虎尾，不咥人，亨。","如履虎尾，謹慎則安。守禮循分、戒慎恐懼可保無虞。"],
+ [11,"泰","坤","乾","小往大來，吉亨。","天地交泰、通達之象。上下溝通、內外和順，諸事順遂；安中須慮危。"],
+ [12,"否","乾","坤","否之匪人，不利君子貞。","天地不交、閉塞之象。宜守正待時、退藏斂鋒，否極將泰來。"],
+ [13,"同人","乾","離","同人于野，亨，利涉大川。","與人和同、志同道合。宜開誠佈公、廣結同志，合則利。"],
+ [14,"大有","離","乾","元亨。","大有收穫、豐盛之象。宜順天休命、謙以持盈，防驕滿。"],
+ [15,"謙","坤","艮","亨，君子有終。","謙德之象，六爻皆吉。宜謙下自牧，愈謙愈受益，有始有終。"],
+ [16,"豫","震","坤","利建侯行師。","和樂順動之象。宜順勢而為、防安逸生怠，居安思危為要。"],
+ [17,"隨","兌","震","元亨利貞，無咎。","隨順時勢之象。宜擇善而隨、與時俱進，守正則吉。"],
+ [18,"蠱","艮","巽","元亨，利涉大川。","積弊待整之象。宜革除舊弊、整頓振作，先破後立可成。"],
+ [19,"臨","坤","兌","元亨利貞。至于八月有凶。","陽長臨盛之象。宜把握時機、積極臨事，惟盛有時限、須及時。"],
+ [20,"觀","巽","坤","盥而不薦，有孚顒若。","觀察審視之象。宜靜觀其變、以身作則，多看多學、勿妄動。"],
+ [21,"噬嗑","離","震","亨，利用獄。","咬合去梗之象。宜排除障礙、明快決斷，剛柔並用可通。"],
+ [22,"賁","艮","離","亨，小利有攸往。","文飾修美之象。宜適度包裝、內外兼修，惟重實質勿流於虛華。"],
+ [23,"剝","艮","坤","不利有攸往。","剝落衰退之象。宜守不宜進、保存實力，順時待變、勿逆勢。"],
+ [24,"復","坤","震","亨。出入無疾，反復其道。","一陽來復、否極泰來。宜把握新機、循序漸進，生機再現。"],
+ [25,"無妄","乾","震","元亨利貞。其匪正有眚。","無妄天真之象。宜守正循理、順其自然，妄動則有災。"],
+ [26,"大畜","艮","乾","利貞，不家食吉，利涉大川。","大有積蓄、蓄德養才。宜厚積薄發、把握良機大展。"],
+ [27,"頤","艮","震","貞吉。觀頤，自求口實。","頤養之象。宜慎言節食、自食其力，修身養德為本。"],
+ [28,"大過","兌","巽","棟橈，利有攸往，亨。","負荷過重之象。宜當機立斷、非常時行非常事，慎防失衡。"],
+ [29,"坎","坎","坎","習坎，有孚，維心亨。","重險當前之象。宜誠心守正、臨危不亂，以誠涉險可出。"],
+ [30,"離","離","離","利貞，亨。畜牝牛吉。","光明附麗之象。宜依附正道、柔順中正，守持則亨通。"],
+ [31,"咸","兌","艮","亨，利貞，取女吉。","感應交合之象。宜以誠感人、虛心相應，感情姻緣皆吉。"],
+ [32,"恆","震","巽","亨，無咎，利貞，利有攸往。","恆久之象。宜持之以恆、守常不變，貴在堅持、忌半途。"],
+ [33,"遯","乾","艮","亨，小利貞。","退避隱遯之象。宜急流勇退、避害全身，識時務為要。"],
+ [34,"大壯","震","乾","利貞。","陽剛盛壯之象。宜守正用壯、勿恃強妄進，壯而有禮則吉。"],
+ [35,"晉","離","坤","康侯用錫馬蕃庶，晝日三接。","上進光明之象。宜積極上進、順勢而升，前程光明。"],
+ [36,"明夷","坤","離","利艱貞。","光明受損之象。宜韜光養晦、內明外晦，守正處艱可保。"],
+ [37,"家人","巽","離","利女貞。","齊家之象。宜內外有分、以誠治家，家和則萬事興。"],
+ [38,"睽","離","兌","小事吉。","乖違背離之象。宜求同存異、小事可為，大事宜緩、防口舌。"],
+ [39,"蹇","坎","艮","利西南，不利東北。利見大人。","險阻難行之象。宜停止待援、反求諸己，見險而止為智。"],
+ [40,"解","震","坎","利西南。無所往，其來復吉。","險難消解之象。宜把握解圍良機、赦過宥罪，宜早不宜遲。"],
+ [41,"損","艮","兌","有孚，元吉，無咎，可貞。","損下益上之象。宜懲忿窒欲、損己利人，先損後益、捨得有道。"],
+ [42,"益","巽","震","利有攸往，利涉大川。","損上益下之象。宜見善則遷、積極興利，施惠於人、大有可為。"],
+ [43,"夬","兌","乾","揚于王庭，孚號有厲。","決斷去邪之象。宜果決除弊、明正典刑，惟剛決須防後患。"],
+ [44,"姤","乾","巽","女壯，勿用取女。","不期而遇之象。宜謹防小人、慎始防微，邂逅雖美、勿輕信。"],
+ [45,"萃","兌","坤","亨。王假有廟，利見大人。","薈萃聚合之象。宜聚集人力、順勢而聚，人和則興、防聚而生爭。"],
+ [46,"升","坤","巽","元亨，用見大人，勿恤，南征吉。","上升進取之象。宜循序漸進、積小成大，穩步高升。"],
+ [47,"困","兌","坎","亨，貞，大人吉，無咎。","困窮受制之象。宜守正安困、處困不失志，以誠自守、困極將通。"],
+ [48,"井","坎","巽","改邑不改井，無喪無得。","養而不窮之象。宜修德養民、持恆不變，惠澤及人、貴在有恆。"],
+ [49,"革","兌","離","己日乃孚，元亨利貞，悔亡。","變革除舊之象。宜順天應人、適時而變，革得其時則吉。"],
+ [50,"鼎","離","巽","元吉，亨。","鼎新取新之象。宜革故鼎新、任賢圖治，穩重承載、大吉。"],
+ [51,"震","震","震","亨。震來虩虩，笑言啞啞。","震動警惕之象。宜臨危不亂、恐懼修省，動中守靜可安。"],
+ [52,"艮","艮","艮","艮其背，不獲其身。","抑止安靜之象。宜適可而止、動靜合宜，當止則止為智。"],
+ [53,"漸","巽","艮","女歸吉，利貞。","循序漸進之象。宜按部就班、水到渠成，忌躁進、穩則吉。"],
+ [54,"歸妹","震","兌","征凶，無攸利。","非正相配之象。宜守正慎行、防始亂終棄，凡事三思、勿衝動。"],
+ [55,"豐","震","離","亨。王假之，勿憂，宜日中。","豐大盛滿之象。宜把握盛時、明察決斷，惟盛極須防轉衰。"],
+ [56,"旅","離","艮","小亨，旅貞吉。","行旅漂泊之象。宜謹守本分、柔順謙和，人在外宜謹言慎行。"],
+ [57,"巽","巽","巽","小亨，利有攸往，利見大人。","謙遜順入之象。宜以柔巽入、順勢而行，過柔須防優柔寡斷。"],
+ [58,"兌","兌","兌","亨，利貞。","和悅喜樂之象。宜和顏悅色、以誠相悅，防甘言、悅而守正。"],
+ [59,"渙","巽","坎","亨。王假有廟，利涉大川。","渙散離析之象。宜聚散有時、化解隔閡，乘勢渡難、散中求聚。"],
+ [60,"節","坎","兌","亨。苦節不可貞。","節制有度之象。宜量入為出、適可而止，節而有度則通。"],
+ [61,"中孚","巽","兌","豚魚吉，利涉大川，利貞。","誠信中孚之象。宜以誠感物、信及豚魚，至誠可通、涉險亦吉。"],
+ [62,"小過","震","艮","亨利貞，可小事，不可大事。","小有踰越之象。宜謹守分寸、可小不可大，宜下不宜上、防過。"],
+ [63,"既濟","坎","離","亨小，利貞，初吉終亂。","大功告成之象。宜守成防變、慎終如始，成中藏險、勿懈怠。"],
+ [64,"未濟","離","坎","亨。小狐汔濟，濡其尾。","功虧一簣之象。宜審慎持續、慎辨後行，將成未成、貴在堅持到底。"]
+];
+
+/* ============================================================
+   共用工具
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const rnd = n => Math.floor(Math.random()*n);
+function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
+// 儲存 / 分享 / 提示 / 願望列
+const LS={ get(k,d){ try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;} },
+           set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} } };
+const escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let toastTimer=null;
+function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("on");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("on"),2200); }
+function share(text){
+  if(navigator.share){ navigator.share({title:"玄機籤閣",text}).catch(()=>{}); }
+  else if(navigator.clipboard){ navigator.clipboard.writeText(text).then(()=>toast("已複製，可貼給朋友 🧧"),()=>toast("複製失敗")); }
+  else { toast("此裝置不支援分享"); }
+}
+function wishHTML(sel){ const v=$(sel).value.trim(); return v?`<div class="wish">所問 · ${escapeHTML(v)}</div>`:""; }
+
+// 日期種子（同日同值）
+function dateSeed(d){
+  const s = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  let x = s ^ 0x9e3779b9; x = (x*2654435761) >>> 0; return x;
+}
+
+// 農民曆引擎：改用 lunar-javascript（離線、精準），取代原本近似的干支/節氣
+const Solar = window.Solar, Lunar = window.Lunar;
+const pad = n => String(n).padStart(2,"0");
+const fmtI = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseI = v => { const [y,m,d]=v.split("-").map(Number); return new Date(y,m-1,d); };
+const ZEMO = {鼠:"🐭",牛:"🐮",虎:"🐯",兔:"🐰",龍:"🐲",蛇:"🐍",馬:"🐎",羊:"🐑",猴:"🐵",雞:"🐔",狗:"🐶",豬:"🐷"};
+// lunar-javascript 只有簡體，這裡做簡→繁：涵蓋掃了 42 年後引擎「可能吐出」的全部字（生肖/建除/節氣/農曆/宜忌/沖煞方位）
+const S2T = {东:"東",丧:"喪",产:"產",亲:"親",仓:"倉",会:"會",养:"養",动:"動",医:"醫",发:"發",启:"啟",坏:"壞",坟:"墳",墙:"牆",处:"處",学:"學",宁:"寧",寿:"壽",帐:"帳",庙:"廟",开:"開",归:"歸",惊:"驚",执:"執",扫:"掃",挂:"掛",斋:"齋",断:"斷",无:"無",机:"機",桥:"橋",殓:"殮",涂:"塗",渔:"漁",满:"滿",猎:"獵",猪:"豬",盖:"蓋",种:"種",竖:"豎",筑:"築",纳:"納",经:"經",结:"結",绘:"繪",络:"絡",网:"網",腊:"臘",艺:"藝",补:"補",订:"訂",讼:"訟",词:"詞",诸:"諸",谢:"謝",谷:"穀",财:"財",货:"貨",车:"車",进:"進",针:"針",钻:"鑽",门:"門",闭:"閉",问:"問",闰:"閏",饰:"飾",馀:"餘",马:"馬",鸡:"雞",龙:"龍",蚁:"蟻",蛰:"蟄",厕:"廁",习:"習"};
+const T = s => { if(!s) return s; let o=""; for(const ch of s) o+=(S2T[ch]||ch); return o; };
+function lunarOf(date){
+  return Solar.fromYmd(date.getFullYear(), date.getMonth()+1, date.getDate()).getLunar();
+}
+function almanacOf(date){
+  const l = lunarOf(date);
+  const prev = l.getPrevJieQi(true), next = l.getNextJieQi(true);
+  const ns = next ? next.getSolar() : null;
+  return {
+    lunarMonth:T(l.getMonthInChinese()), lunarDay:T(l.getDayInChinese()),
+    shengxiao:T(l.getYearShengXiao()),
+    gzY:T(l.getYearInGanZhi()), gzM:T(l.getMonthInGanZhi()), gzD:T(l.getDayInGanZhi()),
+    zhixing:T(l.getZhiXing()),
+    jieqiToday:T(l.getJieQi()||""),
+    jieqiNow:T(prev?prev.getName():""), jieqiNext:T(next?next.getName():""),
+    jieqiNextShort:ns?`${ns.getMonth()}/${ns.getDay()}`:"",
+    yi:l.getDayYi().map(T), ji:l.getDayJi().map(T),
+    chong:T(l.getDayChongDesc()), sha:T(l.getDaySha()),
+    xi:T(l.getDayPositionXiDesc()), cai:T(l.getDayPositionCaiDesc()), fu:T(l.getDayPositionFuDesc())
+  };
+}
+
+// 繪卦（上爻在上，初爻在下）
+function hexHTML(up,low){
+  const lines = TRI[low].concat(TRI[up]); // index0 = 初爻(底)
+  let rows="";
+  for(let i=5;i>=0;i--){
+    rows += lines[i]===1
+      ? '<div class="yao yang"></div>'
+      : '<div class="yao yin"><span></span><span></span></div>';
+  }
+  return '<div class="hex">'+rows+'</div>';
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+(function initHeader(){
+  const now = new Date();
+  const wd = ["日","一","二","三","四","五","六"][now.getDay()];
+  $("#mDate").textContent = `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} 週${wd}`;
+  const l = lunarOf(now), sx = T(l.getYearShengXiao());
+  $("#mGz").innerHTML = `${T(l.getYearInGanZhi())} 年 ${ZEMO[sx]||""} ${sx}`;
+  $("#mJq").textContent = T(l.getJieQi() || (l.getPrevJieQi(true) ? l.getPrevJieQi(true).getName() : ""));
+})();
+
+/* ============================================================
+   分頁切換
+   ============================================================ */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+    t.classList.add("on");
+    $("#v-"+t.dataset.v).classList.add("on");
+    if(t.dataset.v==="almanac" && !almRendered) showAlmanac(new Date());
+  });
+});
+
+// textarea 自動長高
+document.querySelectorAll(".ask").forEach(a=>{
+  a.addEventListener("input",()=>{ a.style.height="auto"; a.style.height=a.scrollHeight+"px"; });
+});
+
+/* ============================================================
+   1) 每日求籤（每日一籤：日期種子）
+   ============================================================ */
+const qReel=$("#qReel"), qTop=qReel.querySelector(".r-top .num"),
+      qMidN=qReel.querySelector(".r-mid .num"), qMidL=qReel.querySelector(".r-mid .lab"),
+      qBot=qReel.querySelector(".r-bot .num");
+let qSpinning=false;
+
+let qMode="today"; // today | pick
+function activeQianDate(){
+  if(qMode==="pick"){
+    const v=$("#qDate").value;
+    if(v){ const [y,m,d]=v.split("-").map(Number); return new Date(y,m-1,d); }
+  }
+  return new Date();
+}
+// 同一天同一支（日期種子）；自選模式則取所選日期
+function lotForDate(date){ return dateSeed(date) % 60; }
+function setQReel(i){
+  const w=n=>((n%60)+60)%60+1;
+  qTop.textContent=w(i-1); qMidN.textContent=w(i); qBot.textContent=w(i+1);
+  qMidL.textContent="第 "+w(i)+" 籤";
+}
+// 未抽前不劇透：置為凝神狀態
+function resetReel(){ qTop.textContent="—"; qBot.textContent="—"; qMidN.textContent="籤"; qMidL.textContent="凝神搖籤"; }
+function drawQian(){
+  if(qSpinning) return; qSpinning=true; buzz(20);
+  $("#qBtn").disabled=true; $("#qSlip").innerHTML="";
+  const qDrawDate=activeQianDate();
+  const target=lotForDate(qDrawDate);
+  let t=0, dur=1500, start=performance.now();
+  (function spin(now){
+    const p=(now-start)/dur;
+    if(p<1){
+      const ease=1-Math.pow(1-p,3);
+      const idx=Math.floor((target+ 15*(1-ease)*60 + rnd(3)));
+      setQReel(idx);
+      const gap=30+ ease*ease*140;
+      setTimeout(()=>requestAnimationFrame(spin), gap);
+    }else{
+      setQReel(target); qSpinning=false; $("#qBtn").disabled=false;
+      buzz([15,40,15]); showQian(target, qDrawDate);
+      if(qMode==="today") LS.set("xj_qian",{date:fmtI(qDrawDate),lot:target});
+      requestAnimationFrame(()=>$("#qSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+    }
+  })(start);
+}
+function showQian(i, date){
+  const [gz,luck,poem,jie]=QIAN[i];
+  let sub = `${gz} · 今日一籤，明日更新`;
+  if(qMode==="pick"){
+    const lu=lunarOf(date);
+    sub = `${date.getFullYear()}/${pad(date.getMonth()+1)}/${pad(date.getDate())} · 農曆${T(lu.getMonthInChinese())}月${T(lu.getDayInChinese())} · ${T(lu.getDayInGanZhi())}日`;
+  }
+  $("#qSlip").innerHTML=`
+   <div class="slip">
+     <div class="stub"></div>
+     <div class="body">
+       ${wishHTML("#qAsk")}
+       <div class="head">
+         <div><div class="no serif">第 ${i+1} 籤</div><div class="gz">${sub}</div></div>
+         <div class="badge b-${luck} serif">${luck}</div>
+       </div>
+       <div class="poem serif">${poem.map(l=>`<div>${l}</div>`).join("")}</div>
+       <div class="jie-t serif">解 曰</div>
+       <div class="jie">${jie}</div>
+       <div class="acts"><button class="act share" id="qShare">分享 ⤴</button></div>
+     </div>
+   </div>`;
+  $("#qShare").addEventListener("click",()=>{
+    const w=$("#qAsk").value.trim();
+    share(`【玄機籤閣】第${i+1}籤 ${luck}\n${w?"所問："+w+"\n":""}${poem.join("　")}\n\n${jie}`);
+  });
+}
+$("#qBtn").addEventListener("click",drawQian);
+const qDate=$("#qDate");
+function setQMode(m){
+  qMode=m;
+  $("#qModeToday").classList.toggle("on", m==="today");
+  $("#qModePick").classList.toggle("on", m==="pick");
+  qDate.style.display = m==="pick" ? "" : "none";
+  if(m==="pick" && !qDate.value){
+    const n=new Date();
+    qDate.value=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`;
+  }
+  $("#qSlip").innerHTML=""; resetReel();
+}
+$("#qModeToday").addEventListener("click",()=>setQMode("today"));
+$("#qModePick").addEventListener("click",()=>setQMode("pick"));
+qDate.addEventListener("change",()=>{ $("#qSlip").innerHTML=""; resetReel(); });
+// 初始：今天若已抽過就直接顯示（不劇透、免重搖），否則凝神狀態
+(function initQian(){
+  const saved=LS.get("xj_qian"), todayStr=fmtI(new Date());
+  if(saved && saved.date===todayStr){ setQReel(saved.lot); showQian(saved.lot, new Date()); }
+  else resetReel();
+})();
+
+/* ============================================================
+   2) 易經抽卦（每次隨機）
+   ============================================================ */
+const gReel=$("#gReel"), gTop=gReel.querySelector(".r-top"),
+      gMid=gReel.querySelector(".r-mid"), gBot=gReel.querySelector(".r-bot");
+let gSpinning=false;
+
+function setGReel(i){
+  const w=n=>((n%64)+64)%64;
+  const mk=k=>{ const g=GUA[w(k)]; return {hex:hexHTML(g[2],g[3]), name:g[1]}; };
+  const a=mk(i-1), b=mk(i), c=mk(i+1);
+  gTop.innerHTML=a.hex; gBot.innerHTML=c.hex;
+  gMid.innerHTML=b.hex+`<div class="hexname serif">${b.name}</div>`;
+}
+function drawGua(){
+  if(gSpinning) return; gSpinning=true; buzz(20);
+  $("#gBtn").disabled=true; $("#gSlip").innerHTML="";
+  const target=rnd(64);
+  let start=performance.now(), dur=1600;
+  (function spin(now){
+    const p=(now-start)/dur;
+    if(p<1){
+      const ease=1-Math.pow(1-p,3);
+      const idx=Math.floor(target + 16*(1-ease)*64 + rnd(3));
+      setGReel(idx);
+      const gap=30+ease*ease*150;
+      setTimeout(()=>requestAnimationFrame(spin),gap);
+    }else{
+      setGReel(target); gSpinning=false; $("#gBtn").disabled=false;
+      buzz([15,40,15]); showGua(target);
+      requestAnimationFrame(()=>$("#gSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+    }
+  })(start);
+}
+function resetGReel(){
+  gTop.innerHTML='<span class="num">☰</span>';
+  gMid.innerHTML='<div class="hexname serif">易經</div>';
+  gBot.innerHTML='<span class="num">☷</span>';
+}
+function showGua(i){
+  const [n,name,up,low,ci,jie]=GUA[i];
+  const xiang=NATURE[up]+NATURE[low]+name; // 例：澤地萃
+  $("#gSlip").innerHTML=`
+   <div class="slip">
+     <div class="stub"></div>
+     <div class="body">
+       ${wishHTML("#gAsk")}
+       <div class="xiang">
+         <div class="hbox">${hexHTML(up,low)}</div>
+         <div class="info">
+           <div class="nm serif">${name}</div>
+           <div class="sub">${xiang} · 第 ${n} 卦</div>
+           <div class="sub">上卦 ${up}（${NATURE[up]}）／下卦 ${low}（${NATURE[low]}）</div>
+         </div>
+       </div>
+       <div class="jie-t serif">卦 辭</div>
+       <div class="jie serif" style="font-size:16px;">${ci}</div>
+       <div class="jie-t serif">釋 義</div>
+       <div class="jie">${jie}</div>
+       <div class="acts"><button class="act share" id="gShare">分享 ⤴</button></div>
+     </div>
+   </div>`;
+  $("#gShare").addEventListener("click",()=>{
+    const w=$("#gAsk").value.trim();
+    share(`【玄機籤閣】${name}卦（${xiang} · 第${n}卦）\n${w?"所問："+w+"\n":""}卦辭：${ci}\n\n${jie}`);
+  });
+}
+$("#gBtn").addEventListener("click",drawGua);
+resetGReel();
+
+/* ============================================================
+   3) 擲筊請示
+   平 = 陽面朝上；凸 = 陰面朝上
+   一平一凸→聖筊；兩平→笑筊；兩凸→陰筊
+   ============================================================ */
+let tally={sheng:0,xiao:0,yin:0}, streak=0, tossing=false;
+let optStreak=false, optBless=false;
+const blk1=$("#blk1"), blk2=$("#blk2");
+
+function throwBlock(){
+  // 誠心加持：略偏「平」（聖筊機率略升）
+  const pFlat = optBless ? 0.56 : 0.5;
+  return Math.random()<pFlat ? "平" : "凸";
+}
+function verdictOf(a,b){
+  if(a!==b) return {k:"聖", name:"聖筊", desc:"一平一凸 · 神明應允，可行"};
+  if(a==="平") return {k:"笑", name:"笑筊", desc:"兩平 · 神明未明示，宜再請示或另問"};
+  return {k:"陰", name:"陰筊", desc:"兩凸 · 神明不允，宜緩行或另尋他法"};
+}
+function tossJiao(){
+  if(tossing) return; tossing=true; buzz(25);
+  $("#jBtn").disabled=true;
+  blk1.classList.add("tumbling"); blk2.classList.add("tumbling","b2");
+  const a=throwBlock(), b=throwBlock();
+  setTimeout(()=>{
+    blk1.querySelector(".face").textContent=a;
+    blk2.querySelector(".face").textContent=b;
+    blk1.classList.remove("tumbling"); blk2.classList.remove("tumbling","b2");
+    const v=verdictOf(a,b);
+    if(v.k==="聖"){ tally.sheng++; streak++; } else { streak=0; if(v.k==="笑")tally.xiao++; else tally.yin++; }
+    renderTally();
+    let extra="";
+    if(optStreak){
+      if(v.k==="聖" && streak>=3){ extra=" ✦ 連三聖筊，神明明確應允"; streak=0; }
+      else if(v.k==="聖"){ extra=` ✦ 已連 ${streak} 聖，續擲求連三`; }
+    }
+    const w=$("#jAsk").value.trim();
+    const wline=w?`<div style="font-size:13px;color:var(--gold-d);letter-spacing:1px;margin-bottom:6px;">所問 · ${escapeHTML(w)}</div>`:"";
+    $("#jVerdict").className="verdict v-"+v.k;
+    $("#jVerdict").innerHTML=`${wline}<div class="name serif">${v.name}</div><div class="desc">${v.desc}${extra}</div>`;
+    buzz(v.k==="聖"?[15,50,15,50,15]:30);
+    tossing=false; $("#jBtn").disabled=false;
+    saveJ();
+  }, 900);
+}
+function saveJ(){ LS.set("xj_jiao",{tally,streak,optStreak,optBless}); }
+function renderTally(){
+  $("#tSheng").textContent=tally.sheng;
+  $("#tXiao").textContent=tally.xiao;
+  $("#tYin").textContent=tally.yin;
+  $("#jStreak").textContent = streak>0 ? `目前連續聖筊：${streak}` : "";
+}
+$("#jBtn").addEventListener("click",tossJiao);
+$("#jReset").addEventListener("click",()=>{
+  tally={sheng:0,xiao:0,yin:0}; streak=0; renderTally();
+  $("#jVerdict").className="verdict";
+  $("#jVerdict").innerHTML='<div class="empty">凝神請示後擲筊</div>';
+  blk1.querySelector(".face").textContent="凸";
+  blk2.querySelector(".face").textContent="平";
+  buzz(20); saveJ();
+});
+
+// 設定
+$("#jSet").addEventListener("click",()=>$("#mask").classList.add("on"));
+$("#setClose").addEventListener("click",()=>$("#mask").classList.remove("on"));
+$("#mask").addEventListener("click",e=>{ if(e.target===$("#mask")) $("#mask").classList.remove("on"); });
+$("#swStreak").addEventListener("click",function(){ optStreak=!optStreak; this.classList.toggle("on",optStreak); saveJ(); });
+$("#swBless").addEventListener("click",function(){ optBless=!optBless; this.classList.toggle("on",optBless); saveJ(); });
+// 還原上次的擲筊統計與設定
+(function initJiao(){
+  const s=LS.get("xj_jiao");
+  if(s){ tally=s.tally||tally; streak=s.streak||0; optStreak=!!s.optStreak; optBless=!!s.optBless;
+    $("#swStreak").classList.toggle("on",optStreak); $("#swBless").classList.toggle("on",optBless); renderTally(); }
+})();
+
+/* ============================================================
+   4) 農民曆（選日期看黃曆：農曆日期／干支／節氣／建除／宜忌／沖煞方位）
+   ============================================================ */
+const aDate=$("#aDate"), aBody=$("#aBody");
+let almRendered=false;
+// 建除十二神白話（點 tag 顯示）
+const ZHIXING={
+  建:"歲君之象，萬物生發。宜出行、上任、開業，忌動土、開倉。",
+  除:"除舊佈新之日。宜打掃、療病、除服、解約，忌遠行、赴任。",
+  滿:"豐收圓滿之日。宜嫁娶、祈福、開市、祭祀，忌動土、安葬。",
+  平:"平常無奇之日。宜鋪路、修飾、平治道塗，餘事平平、忌訴訟。",
+  定:"安定穩固之日。宜訂婚、簽約、入學、進宅，忌訴訟、出行。",
+  執:"固守掌權之日。宜捕捉、收購、立契、造作，忌開市、移徙。",
+  破:"耗損破敗之日。宜拆卸、破屋、療重病，餘事諸凡不宜。",
+  危:"危險警惕之日。宜安床、祭祀、平靜守成，忌登高、行船、冒險。",
+  成:"成功和合之日。宜開市、入學、結婚、動土，大致諸事皆吉。",
+  收:"收成收藏之日。宜進財、收購、納畜、入倉，忌放債、出行、安葬。",
+  開:"開通暢達之日。宜開業、上任、求學、祈福、動土，忌安葬。",
+  閉:"閉塞收尾之日。宜築堤、埋葬、收藏填穴，忌開張、動土、求醫（所以今天多見喪葬類）。"
+};
+const TIP_CHONG="「沖」是與當日地支相沖的生肖。屬這生肖的人今日運勢受擾，宜低調、諸事多留心、避免重大決定。";
+const TIP_SHA="「煞」指當日不利的方位。這個方向今日宜避免動土、遠行、搬遷等大動作。";
+function renderAlmanac(date){
+  const a=almanacOf(date);
+  const wd=["日","一","二","三","四","五","六"][date.getDay()];
+  const yi=a.yi.slice(0,6).join(" ")||"—";
+  const ji=a.ji.slice(0,6).join(" ")||"—";
+  const zxTip=escapeHTML(`${a.zhixing}日 · ${ZHIXING[a.zhixing]||""}`);
+  const jqTag=a.jieqiToday?`<span class="tag">${a.jieqiToday}</span>`:"";
+  const jqFoot=a.jieqiNow?`<span>節氣 <b>${a.jieqiNow}</b> → ${a.jieqiNext} ${a.jieqiNextShort}</span>`:"";
+  aBody.innerHTML=`
+   <div class="alma">
+     <div class="top">
+       <div class="big">
+         <div class="d">${date.getDate()}</div>
+         <div class="md">${date.getFullYear()}/${pad(date.getMonth()+1)}</div>
+         <div class="wk">週${wd}</div>
+       </div>
+       <div class="head2">
+         <div class="lnr">農曆 ${a.lunarMonth}月${a.lunarDay}</div>
+         <div class="gz">${a.gzY}年 · ${a.gzM}月 · ${a.gzD}日</div>
+         <div class="tags"><span class="tag">${a.shengxiao}年</span><span class="tag" data-tip="${zxTip}">${a.zhixing}日 ⓘ</span>${jqTag}</div>
+       </div>
+     </div>
+     <div class="tip" id="aTip" style="display:none"></div>
+     <div class="yj">
+       <div class="col y"><span class="ht">宜</span><div class="items">${yi}</div></div>
+       <div class="col j"><span class="ht">忌</span><div class="items">${ji}</div></div>
+     </div>
+     <div class="foot">
+       <span data-tip="${escapeHTML(TIP_CHONG)}">沖 <b>${a.chong}</b></span>
+       <span data-tip="${escapeHTML(TIP_SHA)}">煞 <b>${a.sha}</b></span>
+       <span>喜神 <b>${a.xi}</b></span>
+       <span>財神 <b>${a.cai}</b></span>
+       <span>福神 <b>${a.fu}</b></span>
+       ${jqFoot}
+     </div>
+     <div class="note">※ 點「建除日／沖／煞」看白話解釋。宜忌／沖煞為傳統通書簡化參考，各家版本略有出入，僅供參酌。</div>
+   </div>`;
+}
+// 點 tag/沖/煞 → 顯示白話（委派一次，aBody 內容換了也還在）
+aBody.addEventListener("click",e=>{
+  const el=e.target.closest("[data-tip]"); if(!el) return;
+  const tip=$("#aTip"); if(!tip) return;
+  const txt=el.getAttribute("data-tip");
+  if(tip.style.display!=="none" && tip.dataset.cur===txt){ tip.style.display="none"; tip.dataset.cur=""; }
+  else { tip.textContent=txt; tip.style.display=""; tip.dataset.cur=txt; }
+});
+function showAlmanac(date){ aDate.value=fmtI(date); renderAlmanac(date); almRendered=true; }
+aDate.addEventListener("change",()=>{ if(aDate.value) renderAlmanac(parseI(aDate.value)); });
+$("#aPrev").addEventListener("click",()=>{ const d=parseI(aDate.value); d.setDate(d.getDate()-1); showAlmanac(d); });
+$("#aNext").addEventListener("click",()=>{ const d=parseI(aDate.value); d.setDate(d.getDate()+1); showAlmanac(d); });
+$("#aToday").addEventListener("click",()=>showAlmanac(new Date()));
+</script>
+</body>
+</html>
