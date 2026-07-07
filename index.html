@@ -286,8 +286,15 @@
   .tstage.s1 .flip{width:150px;height:257px;}
   .tstage.s3 .flip{width:98px;height:168px;}
   .flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;
-    transition:transform .6s var(--ease-out);}
+    transition:transform .8s cubic-bezier(.34,.85,.36,1);}
   .flip.flipped .flip-inner{transform:rotateY(180deg);}
+  /* 發牌落位 / 前搖 / 落定金光（塔羅儀式節奏，v1.1e-塔羅調整） */
+  @keyframes dealIn{from{opacity:0;transform:translateY(30px) scale(.92);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes armGlow{0%{filter:none;}50%{filter:drop-shadow(0 0 11px var(--glow-gold));}100%{filter:none;}}
+  @keyframes frontGlow{0%{filter:none;}28%{filter:drop-shadow(0 0 13px var(--glow-gold));}100%{filter:none;}}
+  .flip.dealing{animation:dealIn .4s both var(--ease-out);}
+  .flip.arming .flip-back{animation:armGlow .13s ease-out;}
+  .flip.settled .flip-front{animation:frontGlow .5s ease-out;}
   .flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
     border-radius:9px;overflow:hidden;}
   .flip-back{background:#0b0806;box-shadow:0 4px 16px rgba(0,0,0,.55);}
@@ -1375,17 +1382,22 @@ function _drawTarot(){
   const idx=[]; while(idx.length<tSpread){ const r=rnd(TAROT.length); if(!idx.includes(r)) idx.push(r); }
   const draw=idx.map((i,k)=>({card:TAROT[i], rev:Math.random()<0.5, pos:posArr[k]||""}));
   const qi = tMix ? pickQian() : -1;
-  // 建卡：背面朝上、front 已備妥；再逐張翻開（同容器 3D flip）
+  // 建卡：背面朝上、front 已備妥
   tStage.innerHTML = draw.map(d=>flipCard(d)).join("");
   const cards=[...tStage.querySelectorAll('.flip')];
-  const step = reduceMotion()?60:300, flipWait = reduceMotion()?40:640;
+  const done=()=>{ tDrawing=false; $("#tBtn").disabled=false; tMix?showMixed(draw,qi):showTarot(draw); };
+  const rm=reduceMotion();
+  if(rm){ cards.forEach(c=>c.classList.add("flipped")); setTimeout(done,60); return; }
+  // 儀式節奏：發牌落位 → 前搖發光 → 翻牌(有重量) → 落定金光 → 結果卡延後淡入
+  const dealStep=170, dealDur=400, armDur=130, flipStep=340, flipDur=820, tailWait=260;
+  cards.forEach((c,k)=>{ c.style.animationDelay=(k*dealStep)+"ms"; c.classList.add("dealing"); });
+  const flipBase=(cards.length-1)*dealStep + dealDur + 100;   // 全部落位後才開翻
   draw.forEach((d,k)=>{
-    setTimeout(()=>{
-      buzz(15); cards[k].classList.add("flipped");
-      if(k===tSpread-1){
-        setTimeout(()=>{ tDrawing=false; $("#tBtn").disabled=false; tMix?showMixed(draw,qi):showTarot(draw); }, flipWait);
-      }
-    }, step*(k+1));
+    const t0=flipBase + k*flipStep;
+    setTimeout(()=>{ cards[k].classList.remove("dealing"); replay(cards[k],"arming"); }, t0);           // 前搖金邊
+    setTimeout(()=>{ buzz(15); cards[k].classList.remove("arming"); cards[k].classList.add("flipped"); }, t0+armDur);
+    setTimeout(()=>{ cards[k].classList.add("settled"); }, t0+armDur+flipDur);                          // 落定金光
+    if(k===tSpread-1) setTimeout(done, t0+armDur+flipDur+tailWait);                                     // 結果延後
   });
 }
 function tarotRowsHTML(draw){
