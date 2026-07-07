@@ -285,6 +285,24 @@
   .alma .more{background:none;border:none;color:#8f2519;font-family:inherit;font-size:13px;
     cursor:pointer;padding:2px 0;text-decoration:underline;letter-spacing:1px;}
 
+  /* ---------- 今日氣場 ---------- */
+  .aura .zhead .bigsym{font-size:40px;}
+  .auraline{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;margin:9px 0 3px;}
+  .auraline .lb{flex:0 0 auto;font-weight:700;letter-spacing:2px;font-size:14px;}
+  .auraline.good .lb{color:#3f7a3a;} .auraline.bad .lb{color:#8f2519;}
+  .achip{font-size:13.5px;border-radius:14px;padding:5px 12px;line-height:1.4;}
+  .achip.g{background:rgba(63,122,58,.12);border:1px solid rgba(63,122,58,.38);color:#2f5a2c;}
+  .achip.b{background:rgba(143,37,25,.1);border:1px solid rgba(143,37,25,.32);color:#7a1e14;}
+  .auracard{display:flex;gap:12px;align-items:flex-start;background:rgba(120,60,20,.05);
+    border:1px solid rgba(120,60,20,.2);border-radius:9px;padding:11px 12px;margin-top:13px;}
+  .auracard img{flex:0 0 auto;width:60px;border-radius:5px;border:1px solid rgba(120,60,20,.3);display:block;}
+  .auracard .nm{font-weight:700;color:#7a1e14;font-size:16px;}
+  .auracard .kw2{font-size:12px;color:#8a6a3a;margin:2px 0 4px;}
+  .auracard .mn{font-size:13.5px;color:#3c2f1e;line-height:1.65;}
+  .aurafoot{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;padding-top:10px;
+    border-top:1px dashed rgba(120,60,20,.3);font-size:13px;color:#5a3a1a;}
+  .aurafoot b{color:#7a1e14;}
+
   /* ---------- 星座 ---------- */
   .zgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px;}
   .zbtn{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:9px 2px 7px;
@@ -438,6 +456,11 @@
     <!-- ===== 星座：月相水逆 ===== -->
     <div class="view" id="v-astrosky">
       <div id="skyBody"></div>
+    </div>
+
+    <!-- ===== 今日氣場 ===== -->
+    <div class="view" id="v-aura">
+      <div id="auraBody"></div>
     </div>
 
     <!-- ===== 農民曆 ===== -->
@@ -721,6 +744,7 @@ const NAV=[
     {v:"astropair", tx:"配對",     onEnter:()=>initPair()},
     {v:"astrosky",  tx:"月相水逆", onEnter:()=>renderSky()} ]},
   {id:"alm",   ic:"📜", tx:"曆法", subs:[
+    {v:"aura",    tx:"今日氣場", onEnter:()=>renderAura()},
     {v:"almanac", tx:"農民曆", onEnter:()=>{ if(!almRendered) showAlmanac(new Date()); }} ]},
 ];
 const lastSub={};              // 記住每組最後停留的子頁
@@ -1082,6 +1106,63 @@ $("#tS1").addEventListener("click",()=>tSetSpread(1));
 $("#tS3").addEventListener("click",()=>tSetSpread(3));
 $("#tBtn").addEventListener("click",drawTarot);
 tResetStage();
+
+/* ============================================================
+   7) 今日氣場（曆法組）：建除基調＋黃曆宜忌白話化＋seed 日牌＋節氣月相
+   融合農民曆與塔羅，是產品的混血定位；同日固定。
+   ============================================================ */
+const ZHIXING_AURA={
+  建:{vibe:"開創起頭的一天，適合按下啟動鍵。",good:["啟動新事","出發","面試提案"],avoid:["拖延","猶豫不決"]},
+  除:{vibe:"除舊佈新的一天，先清空才有空間。",good:["整理斷捨離","打掃","看醫生"],avoid:["囤積","留戀舊事"]},
+  滿:{vibe:"圓滿豐盛的一天，能量往外綻放。",good:["慶祝聚會","告白","談合作"],avoid:["動土搬遷","鑽牛角尖"]},
+  平:{vibe:"平穩日常的一天，穩穩做就有收穫。",good:["例行公事","鋪陳布局","維持"],avoid:["賭一把","爭執"]},
+  定:{vibe:"安定確認的一天，適合把事情拍板。",good:["簽約承諾","入學進宅","定案"],avoid:["反覆改動","遠行"]},
+  執:{vibe:"堅持掌握的一天，專注就有戰力。",good:["專注執行","收款談判","立契"],avoid:["開新局","衝動搬遷"]},
+  破:{vibe:"破除清算的一天，適合了結而非開始。",good:["拆解了結","大掃除","看病"],avoid:["開幕結婚","啟動新計畫"]},
+  危:{vibe:"警覺謹慎的一天，守成勝過冒進。",good:["守成備份","複查確認","低調"],avoid:["冒險投機","登高遠行"]},
+  成:{vibe:"成就收成的一天，諸事易成。",good:["完成收尾","開張動工","結婚"],avoid:["半途放棄","悲觀"]},
+  收:{vibe:"收斂收藏的一天，適合進帳與蒐集。",good:["收尾進帳","存錢","蒐集資料"],avoid:["借出","揮霍遠行"]},
+  開:{vibe:"開展通達的一天，門是打開的。",good:["開始新局","求學社交","開張"],avoid:["封閉","鑽死胡同"]},
+  閉:{vibe:"收束沉澱的一天，向內走比往外衝好。",good:["收藏休息","內省","結束一段"],avoid:["開張動工","對外擴張"]}
+};
+function dayCard(date){ const r=seedRnd((dateSeed(date))>>>0); return TAROT[Math.floor(r()*TAROT.length)]; }
+function renderAura(){
+  const now=new Date(), a=almanacOf(now), l=lunarOf(now);
+  const au=ZHIXING_AURA[a.zhixing]||{vibe:"平常的一天。",good:["照常做事"],avoid:["鑽牛角尖"]};
+  const card=dayCard(now);
+  const rng=seedRnd((dateSeed(now)^0x5f3759df)>>>0);
+  const tip=Z_TIPS[Math.floor(rng()*Z_TIPS.length)];
+  const color=Z_COLORS[Math.floor(rng()*Z_COLORS.length)];
+  const moon=moonEmoji(l.getDay())+" "+T(l.getYueXiang());
+  const g=au.good.map(x=>`<span class="achip g">${x}</span>`).join("");
+  const b=au.avoid.map(x=>`<span class="achip b">${x}</span>`).join("");
+  $("#auraBody").innerHTML=`
+   <div class="slip aura"><div class="stub"></div><div class="body">
+     <div class="zhead">
+       <div class="bigsym">${moonEmoji(l.getDay())}</div>
+       <div><div class="t1 serif">今日氣場 · ${a.zhixing}日</div>
+       <div class="t2">${fmtI(now).replace(/-/g,"/")} 週${["日","一","二","三","四","五","六"][now.getDay()]} · 農曆${a.lunarMonth}月${a.lunarDay}</div>
+       <div class="t2">${au.vibe}</div></div>
+     </div>
+     <div class="auraline good"><span class="lb">今日適合</span>${g}</div>
+     <div class="auraline bad"><span class="lb">今日避免</span>${b}</div>
+     <div class="jie-t serif" style="margin-top:13px;">今日指引 · 一張日牌</div>
+     <div class="auracard">
+       <img src="cards/${card.img}" alt="${card.zh}" loading="lazy">
+       <div><div class="nm">${card.zh}<span style="font-size:12px;color:#8a6a3a;font-weight:400;">（正位）</span></div>
+       <div class="kw2">${card.kw}</div><div class="mn">${card.up}</div></div>
+     </div>
+     <div class="aurafoot">
+       <span>節氣 <b>${a.jieqiNow||"—"}</b></span>
+       <span>月相 <b>${moon}</b></span>
+       <span>幸運色 <b>${color}</b></span>
+       <span>開運小語 <b>${tip}</b></span>
+     </div>
+     <div class="acts"><button class="act share" id="auraShare">分享 ⤴</button></div>
+   </div></div>`;
+  $("#auraShare").addEventListener("click",()=>share(
+    `【玄機籤閣 · 今日氣場 ${fmtI(now).replace(/-/g,"/")}】${a.zhixing}日｜${au.vibe}\n✅ 適合：${au.good.join("、")}\n⛔ 避免：${au.avoid.join("、")}\n🔮 日牌：${card.zh}（正位）${card.up}`));
+}
 
 /* ============================================================
    6) 星座（L1：今日運勢/配對；L2：月相/水逆）——全離線
