@@ -285,6 +285,20 @@
   .alma .more{background:none;border:none;color:#8f2519;font-family:inherit;font-size:13px;
     cursor:pointer;padding:2px 0;text-decoration:underline;letter-spacing:1px;}
 
+  /* ---------- 問事分類 chip + 四段式套版解讀 ---------- */
+  .catrow{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 2px;}
+  .catchip{background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--gold-d);
+    border-radius:16px;padding:6px 14px;font-size:13.5px;cursor:pointer;font-family:inherit;letter-spacing:1px;}
+  .catchip.on{background:linear-gradient(180deg,#f2da8e,#cba455);color:#3a2c12;border-color:#e7cd82;font-weight:700;}
+  .catchip:active{transform:scale(.96);}
+  .advice{margin-top:14px;background:rgba(120,60,20,.05);border:1px solid rgba(120,60,20,.22);
+    border-radius:9px;padding:12px 13px;}
+  .advice .adv-h{font-size:14px;font-weight:700;color:#7a1e14;letter-spacing:2px;margin-bottom:8px;}
+  .advice .adv-row{display:flex;gap:9px;font-size:14px;line-height:1.65;color:#3c2f1e;margin:5px 0;}
+  .advice .adv-row .adv-lb{flex:0 0 44px;font-weight:700;color:#8f2519;letter-spacing:1px;}
+  .advice .adv-row.cau{color:#8a6a3a;font-size:13px;margin-top:7px;padding-top:7px;border-top:1px dashed rgba(120,60,20,.25);}
+  .advice .adv-row.cau .adv-lb{color:#a07a3a;}
+
   /* ---------- 今日氣場 ---------- */
   .aura .zhead .bigsym{font-size:40px;}
   .auraline{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;margin:9px 0 3px;}
@@ -368,6 +382,7 @@
     <!-- ===== 每日求籤 ===== -->
     <div class="view on" id="v-qian">
       <textarea class="ask" id="qAsk" rows="1" placeholder="心中默念所求之事（可留空）…"></textarea>
+      <div class="catrow" id="qCat"></div>
       <div class="daterow">
         <div class="seg">
           <button class="segbtn on" id="qModeToday">今日</button>
@@ -424,6 +439,7 @@
     <!-- ===== 塔羅 ===== -->
     <div class="view" id="v-tarot">
       <textarea class="ask" id="tAsk" rows="1" placeholder="想問塔羅的事（可留空）…"></textarea>
+      <div class="catrow" id="tCat"></div>
       <div class="daterow">
         <div class="seg">
           <button class="segbtn on" id="tS1">單張</button>
@@ -493,6 +509,7 @@
 <script src="lunar.js"></script>
 <script src="tarot-data.js"></script>
 <script src="zodiac-data.js"></script>
+<script src="advice-data.js"></script>
 <script>
 "use strict";
 
@@ -669,6 +686,30 @@ function share(text){
   else { toast("此裝置不支援分享"); }
 }
 function wishHTML(sel){ const v=$(sel).value.trim(); return v?`<div class="wish">所問 · ${escapeHTML(v)}</div>`:""; }
+
+// —— 問事分類 + 四段式套版解讀（求籤/塔羅共用）——
+let askCat=null; // 手動選定的分類 id；null=交給關鍵字自動判斷
+function classify(q){ if(!q) return null; const h=ADVICE_CAT.find(c=>c.kw.some(k=>q.includes(k))); return h?h.id:null; }
+function resolveCat(wish){ return askCat || classify(wish); }
+function renderCatChips(){
+  const html=ADVICE_CAT.map(c=>`<button class="catchip${c.id===askCat?' on':''}" data-cat="${c.id}" aria-pressed="${c.id===askCat}">${c.nm}</button>`).join("");
+  ["#qCat","#tCat"].forEach(sel=>{ const el=$(sel); if(el) el.innerHTML=html; });
+}
+function onCatClick(e){ const b=e.target.closest(".catchip"); if(!b) return;
+  askCat = (askCat===b.dataset.cat) ? null : b.dataset.cat; buzz(12); renderCatChips(); }
+function adviceBlock(catId, tone){
+  if(!catId) return "";
+  const c=ADVICE_CAT.find(x=>x.id===catId); if(!c) return "";
+  const a=(ADVICE[catId]||{})[tone]; if(!a) return "";
+  return `<div class="advice">
+     <div class="adv-h">就你問的 · ${c.nm}</div>
+     <div class="adv-row"><span class="adv-lb">對應</span><span>${a.focus}</span></div>
+     <div class="adv-row"><span class="adv-lb">可行動</span><span>${a.action}</span></div>
+     <div class="adv-row cau"><span class="adv-lb">提醒</span><span>${c.caution}</span></div>
+   </div>`;
+}
+const luckTone = luck => (luck==="上上籤"||luck==="上吉籤") ? "吉" : (luck==="下下籤" ? "凶" : "平");
+function tarotTone(draw){ const up=draw.filter(d=>!d.rev).length/draw.length; return up>=0.6?"吉":(up<0.4?"凶":"平"); }
 
 // 日期種子（同日同值）
 function dateSeed(d){
@@ -856,6 +897,7 @@ function showQian(i, date){
        <div class="poem serif">${poem.map(l=>`<div>${l}</div>`).join("")}</div>
        <div class="jie-t serif">解 曰</div>
        <div class="jie">${jie}</div>
+       ${adviceBlock(resolveCat($("#qAsk").value.trim()), luckTone(luck))}
        <div class="acts"><button class="act share" id="qShare">分享 ⤴</button></div>
      </div>
    </div>`;
@@ -1091,6 +1133,7 @@ function showTarot(draw){
      <div class="body">
        ${wishHTML("#tAsk")}
        <div class="tread">${rows}</div>
+       ${adviceBlock(resolveCat($("#tAsk").value.trim()), tarotTone(draw))}
        <div class="acts"><button class="act share" id="tShare">分享 ⤴</button></div>
      </div>
    </div>`;
@@ -1376,6 +1419,11 @@ aDate.addEventListener("change",()=>{ if(aDate.value) renderAlmanac(parseI(aDate
 $("#aPrev").addEventListener("click",()=>{ const d=parseI(aDate.value); d.setDate(d.getDate()-1); showAlmanac(d); });
 $("#aNext").addEventListener("click",()=>{ const d=parseI(aDate.value); d.setDate(d.getDate()+1); showAlmanac(d); });
 $("#aToday").addEventListener("click",()=>showAlmanac(new Date()));
+
+// 問事分類 chip：兩個 view 共用同一 askCat 狀態
+$("#qCat").addEventListener("click",onCatClick);
+$("#tCat").addEventListener("click",onCatClick);
+renderCatChips();
 
 /* ============================================================
    初始路由（置於檔尾：所有 view 的狀態與函式都已就緒）
