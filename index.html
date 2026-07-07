@@ -299,7 +299,11 @@
   @keyframes flipTurn{0%{transform:rotateY(0) scale(1);}
     45%{transform:rotateY(88deg) scale(1.07) translateY(-10px);}
     100%{transform:rotateY(180deg) scale(1) translateY(0);}}
-  /* 發牌落位 / 前搖 / 落定金光（塔羅儀式節奏，v1.1e-塔羅調整） */
+  /* 塔羅儀式敘事：清桌(收牌) → 發牌 → 凝神(前搖) → 翻牌 → 落定 → 領會
+     收牌沉下淡出、發牌浮上——同一個「桌面」方向語彙 */
+  @keyframes gatherOut{to{opacity:0;transform:translateY(36px) scale(.88);}}
+  .flip.gathering{animation:gatherOut .32s var(--ease-out) both;}
+  #tSlip .slip.fading{opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s;}
   @keyframes dealIn{from{opacity:0;transform:translateY(64px) scale(.84);}to{opacity:1;transform:translateY(0) scale(1);}}
   @keyframes armGlow{0%{filter:none;}50%{filter:drop-shadow(0 0 18px var(--glow-gold)) brightness(1.18);}100%{filter:none;}}
   @keyframes frontGlow{0%{filter:none;}30%{filter:drop-shadow(0 0 20px var(--glow-gold));}100%{filter:none;}}
@@ -1397,10 +1401,19 @@ function tSetSpread(mode){          // mode: 1 | 3 | 'x'(東西合參)
   $("#tSlip").innerHTML=""; tResetStage();
 }
 function drawTarot(){ requestBlessing(_drawTarot); }
-function _drawTarot(){
+async function _drawTarot(){
   if(tDrawing) return;
   if(!window.TAROT || !TAROT.length){ toast("牌組載入中，請稍候…"); return; }
-  tDrawing=true; buzz(20); $("#tBtn").disabled=true; $("#tSlip").innerHTML="";
+  tDrawing=true; buzz(20); $("#tBtn").disabled=true;
+  // 第一拍「清桌」：上一輪已翻開的牌沉下收走，舊解讀同步淡出（整桌一起清）
+  const prev=[...tStage.querySelectorAll(".flip")];
+  if(!reduceMotion() && prev.some(c=>c.classList.contains("flipped"))){
+    const oldSlip=$("#tSlip .slip");
+    if(oldSlip) oldSlip.classList.add("fading");
+    prev.forEach((c,k)=>{ c.style.animationDelay=(k*60)+"ms"; c.classList.add("gathering"); });
+    await new Promise(r=>setTimeout(r, 60*(prev.length-1)+380));   // 收完＋留白一拍
+  }
+  $("#tSlip").innerHTML="";
   const posArr = tMix ? T_POS.x : (T_POS[tSpread]||[]);
   const idx=[]; while(idx.length<tSpread){ const r=rnd(TAROT.length); if(!idx.includes(r)) idx.push(r); }
   const draw=idx.map((i,k)=>({card:TAROT[i], rev:Math.random()<0.5, pos:posArr[k]||""}));
