@@ -49,6 +49,14 @@
     border:1px solid var(--line);border-radius:20px;padding:6px 11px;font-size:12.5px;color:var(--gold-b);white-space:nowrap;}
   .chip small{color:var(--gold-d);}
   .chipbtn{cursor:pointer;font-family:inherit;} .chipbtn:active{transform:scale(.95);}
+  /* 署名（低調，與金色細線同語彙） */
+  .credit{text-align:center;margin:20px 0 2px;}
+  .credit span{display:inline-block;color:var(--gold-d);font-size:11.5px;letter-spacing:4px;opacity:.72;
+    position:relative;padding:0 18px;}
+  .credit span::before,.credit span::after{content:"";position:absolute;top:50%;width:16px;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-d));opacity:.6;}
+  .credit span::before{left:-4px;transform:scaleX(-1);}
+  .credit span::after{right:-4px;}
   /* 紀錄簿 */
   .jrnmodal{max-width:362px;}
   .jrnlist{max-height:56vh;overflow-y:auto;margin:2px -4px 12px;padding:0 4px;}
@@ -546,6 +554,8 @@
     </div>
 
   </div>
+
+  <div class="credit"><span class="serif">designed by Po</span></div>
 </div>
 
 <!-- settings modal -->
