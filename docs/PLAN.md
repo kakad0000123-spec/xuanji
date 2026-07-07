@@ -78,9 +78,14 @@
 
 **v1.1d 求問強化**：問事分類 chips ＋ `advice-data.js` 四段式套版（吉凶級×分類）→ 掛進求籤/塔羅結果卡
 
-**v1.1e 儀式與招牌**：
-1. **前置重構（~半小時）**：抽取邏輯純函式化——`pickTarot()/pickQian()/pickGua()/tossJiaoOnce()` 只回資料、不碰 DOM；渲染統一走結果卡。現有功能行為不變。
-1b. **motion layer 鋪設**（與純函式化同批）：tokens＋keyframes＋anim() helper。動畫升級跟著本版一起做（不另開版本，避免碰同段程式兩次）：擲筊筊杯/落地光（tossJiao 本來就要改）、塔羅翻牌（抽牌流程本來就要改，翻牌需牌背牌面同容器 3D 翻轉，與 outerHTML 換法互斥）；reel 停格金光、配對 count-up、曆法輕 glow 為收尾小件。判準：每 view 一個主動畫焦點。
+**v1.1e 儀式與招牌** ✅ 已完成（2026-07-07）：
+- ✅ motion layer（tokens/keyframes/anim/replay/countUp/reduceMotion）
+- ✅ 擲筊 SVG 半月筊杯（jiaoSVG）＋拋落 settle＋金色 landRipple
+- ✅ 塔羅翻牌：cardBackSVG 太極八卦牌背＋.flip-card 3D（棄 outerHTML）
+- ✅ 收尾：配對 count-up＋scorebar fill、reel 停格金光、月相 glow、日牌 pop
+- ✅ 東西合參混合牌陣：3 塔羅（現在/阻礙/未來）＋1 籤總結，logEntry `spread:dongxi`
+- ✅ 擲筊確認流程：xj_settings.ritual 開關，求籤/抽牌前 requestBlessing 閘門，聖筊才開抽
+- 純函式化：throwBlock/verdictOf 本就純；pickQian 已抽出；tarotRowsHTML 抽共用。
 2. 擲筊確認流程（xj_settings 開關，包在抽籤/抽牌前）。
 3. **儀式管線（SPREADS 註冊表）**——本產品的差異化核心。牌陣＝槽位序列，**每槽可來自不同系統**：
    ```js

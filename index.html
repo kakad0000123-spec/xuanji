@@ -298,6 +298,15 @@
   .tread .rc .pos2{font-size:12px;color:#8a6a3a;margin:1px 0;}
   .tread .rc .kw{font-size:12px;color:#8a6a3a;margin:2px 0;}
   .tread .rc .mn{font-size:14px;color:#3c2f1e;line-height:1.7;}
+  /* 東西合參：籤總結區塊 */
+  .mixqian{margin-top:14px;padding-top:12px;border-top:2px solid rgba(120,60,20,.25);}
+  .mixqian .mixq-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px;}
+  .mixqian .mixq-no{font-size:16px;font-weight:700;color:#7a1e14;letter-spacing:2px;}
+  /* 擲筊請示閘門 */
+  .gatemsg{font-size:14px;color:var(--gold-b);text-align:center;margin:0 0 10px;line-height:1.6;}
+  #gateBlocks{min-height:88px;gap:26px;margin:4px 0 6px;}
+  .gjiao{width:88px;}
+  .gateres{text-align:center;min-height:26px;font-weight:700;letter-spacing:2px;color:var(--gold-b);margin-bottom:4px;}
   .alma .tip{margin:0 14px;padding:10px 0;font-size:13px;color:#4a3420;line-height:1.65;
     border-top:1px dashed rgba(120,60,20,.3);}
   .alma .tip b{color:#7a1e14;}
@@ -466,8 +475,9 @@
         <div class="seg">
           <button class="segbtn on" id="tS1">單張</button>
           <button class="segbtn" id="tS3">三張</button>
+          <button class="segbtn" id="tSX">合參</button>
         </div>
-        <span style="font-size:12.5px;color:var(--gold-d);" id="tHint">抽一張看當下指引</span>
+        <span style="font-size:12px;color:var(--gold-d);" id="tHint">抽一張看當下指引</span>
       </div>
       <div class="tstage s1" id="tStage"></div>
       <button class="btn gold serif" id="tBtn">抽 牌</button>
@@ -521,8 +531,25 @@
     <h3 class="serif">筊機設定</h3>
     <div class="opt"><span>連續三聖筊才算定案</span><div class="sw" id="swStreak"></div></div>
     <div class="opt"><span>誠心加持（略偏聖筊）</span><div class="sw" id="swBless"></div></div>
-    <div class="foot">傳統擲筊：一平一凸為聖筊（允）、兩平為笑筊（未明示，宜再請示）、兩凸為陰筊（不允）。開啟「連三聖筊」後，需連續三次聖筊神明方視為明確應允。</div>
+    <div class="opt"><span>求籤／抽牌前先擲筊請示</span><div class="sw" id="swRitual"></div></div>
+    <div class="foot">傳統擲筊：一平一凸為聖筊（允）、兩平為笑筊（未明示，宜再請示）、兩凸為陰筊（不允）。開啟「連三聖筊」後，需連續三次聖筊神明方視為明確應允。開啟「先擲筊請示」後，求籤與抽牌前須先擲出聖筊。</div>
     <button class="btn gold serif close" id="setClose">確 定</button>
+  </div>
+</div>
+
+<!-- 擲筊請示閘門（開啟「先請示」時，求籤/抽牌前跳出） -->
+<div class="mask" id="gateMask">
+  <div class="modal">
+    <h3 class="serif">擲筊請示</h3>
+    <p class="gatemsg" id="gateMsg">先向神明請示是否可問，擲出聖筊方可開抽。</p>
+    <div class="blocks" id="gateBlocks">
+      <div class="jwrap"><div class="jiao gjiao" id="gblk1"></div></div>
+      <div class="jwrap"><div class="jiao gjiao" id="gblk2"></div></div>
+      <span class="jland" id="gLand" aria-hidden="true"></span>
+    </div>
+    <div class="gateres" id="gateResult"></div>
+    <button class="btn red serif" id="gateToss" style="width:100%;">擲 筊</button>
+    <button class="sbtn serif" id="gateCancel" style="width:100%;margin-top:9px;">改日再問</button>
   </div>
 </div>
 
@@ -920,7 +947,8 @@ function setQReel(i){
 }
 // 未抽前不劇透：置為凝神狀態
 function resetReel(){ qTop.textContent="—"; qBot.textContent="—"; qMidN.textContent="籤"; qMidL.textContent="凝神搖籤"; }
-function drawQian(){
+function drawQian(){ requestBlessing(_drawQian); }   // 開啟請示時先擲筊，聖筊才進 _drawQian
+function _drawQian(){
   if(qSpinning) return; qSpinning=true; buzz(20);
   $("#qBtn").disabled=true; $("#qSlip").innerHTML="";
   const qDrawDate=activeQianDate();
@@ -1142,6 +1170,43 @@ $("#setClose").addEventListener("click",()=>$("#mask").classList.remove("on"));
 $("#mask").addEventListener("click",e=>{ if(e.target===$("#mask")) $("#mask").classList.remove("on"); });
 $("#swStreak").addEventListener("click",function(){ optStreak=!optStreak; this.classList.toggle("on",optStreak); saveJ(); });
 $("#swBless").addEventListener("click",function(){ optBless=!optBless; this.classList.toggle("on",optBless); saveJ(); });
+
+// —— 擲筊請示閘門（求籤/抽牌前，設定開啟時）——
+let gatePending=null;
+function ritualOn(){ return !!LS.get("xj_settings",{}).ritual; }
+function requestBlessing(onGranted){
+  if(!ritualOn()){ onGranted(); return; }
+  gatePending=onGranted;
+  $("#gateResult").textContent="";
+  $("#gateMsg").textContent="先向神明請示是否可問，擲出聖筊方可開抽。";
+  $("#gblk1").className="jiao gjiao"; $("#gblk2").className="jiao gjiao";
+  $("#gblk1").innerHTML=jiaoSVG("wood","g1"); $("#gblk2").innerHTML=jiaoSVG("red","g2");
+  $("#gateMask").classList.add("on");
+}
+async function gateToss(){
+  if(tossing) return; tossing=true; $("#gateToss").disabled=true; buzz(25);
+  const a=throwBlock(), b=throwBlock();
+  $("#gblk2").classList.add("b2"); replay($("#gblk1"),"tumbling"); replay($("#gblk2"),"tumbling");
+  await anim($("#gblk2"),null,1050);
+  $("#gblk1").innerHTML=jiaoSVG(a==="平"?"red":"wood","g1"); $("#gblk2").innerHTML=jiaoSVG(b==="平"?"red":"wood","g2");
+  $("#gblk1").classList.remove("tumbling"); $("#gblk2").classList.remove("tumbling","b2");
+  replay($("#gLand"),"go");
+  const v=verdictOf(a,b);
+  $("#gateResult").textContent=v.name;
+  tossing=false; $("#gateToss").disabled=false;
+  if(v.k==="聖"){
+    buzz([15,50,15]); $("#gateMsg").textContent="神明應允，開抽——";
+    setTimeout(()=>{ $("#gateMask").classList.remove("on"); const cb=gatePending; gatePending=null; if(cb) cb(); }, 750);
+  } else {
+    buzz(30);
+    $("#gateMsg").textContent = v.k==="笑" ? "笑筊 · 神明未明示，請再擲一次。" : "陰筊 · 神明不允，可再請示或改日。";
+  }
+}
+$("#gateToss").addEventListener("click",gateToss);
+$("#gateCancel").addEventListener("click",()=>{ $("#gateMask").classList.remove("on"); gatePending=null; });
+$("#gateMask").addEventListener("click",e=>{ if(e.target===$("#gateMask")){ $("#gateMask").classList.remove("on"); gatePending=null; } });
+$("#swRitual").addEventListener("click",function(){ const s=LS.get("xj_settings",{}); s.ritual=!s.ritual; LS.set("xj_settings",s); this.classList.toggle("on",s.ritual); });
+(function initSettings(){ $("#swRitual").classList.toggle("on", ritualOn()); })();
 // 還原上次的擲筊統計與設定
 (function initJiao(){
   blk1.innerHTML=jiaoSVG("wood","1"); blk2.innerHTML=jiaoSVG("red","2");  // 初始筊杯面
@@ -1154,8 +1219,9 @@ $("#swBless").addEventListener("click",function(){ optBless=!optBless; this.clas
    5) 塔羅（RWS 78 張，正/逆位，單張／三張牌陣；離線）
    ============================================================ */
 const tStage=$("#tStage");
-let tSpread=1, tDrawing=false;
-const T_POS={1:["指引"], 3:["過去","現在","未來"]};
+let tSpread=1, tDrawing=false, tMix=false;
+const T_POS={1:["指引"], 3:["過去","現在","未來"], x:["現在","阻礙","未來"]};
+function pickQian(){ return rnd(60); }   // 混合牌陣的籤：隨機（非今日種子）
 // CSS/SVG 太極八卦牌背（複用資料層 TRI 的八卦爻位，對齊 VISUAL_DIRECTION 黑紅金）
 function cardBackSVG(){
   const order=["乾","兌","離","震","巽","坎","艮","坤"], cx=50, cy=85, R=31;
@@ -1195,20 +1261,26 @@ function flipCard(d){
 function tResetStage(){
   tStage.innerHTML = Array.from({length:tSpread},()=>flipCard(null)).join("");
 }
-function tSetSpread(n){
-  tSpread=n;
-  $("#tS1").classList.toggle("on",n===1);
-  $("#tS3").classList.toggle("on",n===3);
-  $("#tHint").textContent = n===1 ? "抽一張看當下指引" : "抽三張看過去·現在·未來";
-  tStage.className="tstage s"+n;
+function tSetSpread(mode){          // mode: 1 | 3 | 'x'(東西合參)
+  tMix = mode==="x";
+  tSpread = tMix ? 3 : mode;
+  $("#tS1").classList.toggle("on",mode===1);
+  $("#tS3").classList.toggle("on",mode===3);
+  $("#tSX").classList.toggle("on",mode==="x");
+  $("#tHint").textContent = mode===1 ? "抽一張看當下指引"
+    : mode===3 ? "抽三張看過去·現在·未來" : "三塔羅（現在/阻礙/未來）＋一支籤總結";
+  tStage.className="tstage s"+tSpread;
   $("#tSlip").innerHTML=""; tResetStage();
 }
-function drawTarot(){
+function drawTarot(){ requestBlessing(_drawTarot); }
+function _drawTarot(){
   if(tDrawing) return;
   if(!window.TAROT || !TAROT.length){ toast("牌組載入中，請稍候…"); return; }
   tDrawing=true; buzz(20); $("#tBtn").disabled=true; $("#tSlip").innerHTML="";
+  const posArr = tMix ? T_POS.x : (T_POS[tSpread]||[]);
   const idx=[]; while(idx.length<tSpread){ const r=rnd(TAROT.length); if(!idx.includes(r)) idx.push(r); }
-  const draw=idx.map((i,k)=>({card:TAROT[i], rev:Math.random()<0.5, pos:(T_POS[tSpread]||[])[k]||""}));
+  const draw=idx.map((i,k)=>({card:TAROT[i], rev:Math.random()<0.5, pos:posArr[k]||""}));
+  const qi = tMix ? pickQian() : -1;
   // 建卡：背面朝上、front 已備妥；再逐張翻開（同容器 3D flip）
   tStage.innerHTML = draw.map(d=>flipCard(d)).join("");
   const cards=[...tStage.querySelectorAll('.flip')];
@@ -1217,31 +1289,54 @@ function drawTarot(){
     setTimeout(()=>{
       buzz(15); cards[k].classList.add("flipped");
       if(k===tSpread-1){
-        setTimeout(()=>{ tDrawing=false; $("#tBtn").disabled=false; showTarot(draw); }, flipWait);
+        setTimeout(()=>{ tDrawing=false; $("#tBtn").disabled=false; tMix?showMixed(draw,qi):showTarot(draw); }, flipWait);
       }
     }, step*(k+1));
   });
 }
-function showTarot(draw){
-  const rows=draw.map(d=>{
+function tarotRowsHTML(draw){
+  return draw.map(d=>{
     const meaning=d.rev?d.card.rev:d.card.up;
     const posline=d.pos?`<div class="pos2">${d.pos}</div>`:"";
     return `<div class="rc">
       <div class="th"><img class="${d.rev?'rev':''}" src="cards/${d.card.img}" alt=""></div>
       <div class="tt">
         <div><span class="nm">${d.card.zh}</span><span class="ori ${d.rev?'rev':'up'}">${d.rev?'逆位':'正位'}</span></div>
-        ${posline}
-        <div class="kw">${d.card.kw}</div>
-        <div class="mn">${meaning}</div>
+        ${posline}<div class="kw">${d.card.kw}</div><div class="mn">${meaning}</div>
       </div>
     </div>`;
   }).join("");
+}
+function showMixed(draw, qi){
+  const [gz,luck,poem,jie]=QIAN[qi];
+  const w=$("#tAsk").value.trim();
+  $("#tSlip").innerHTML=`
+   <div class="slip"><div class="stub"></div><div class="body">
+     ${wishHTML("#tAsk")}
+     <div class="jie-t serif">塔羅 · 現在／阻礙／未來</div>
+     <div class="tread">${tarotRowsHTML(draw)}</div>
+     <div class="mixqian">
+       <div class="mixq-h"><span class="mixq-no serif">籤 · 總結提醒</span><span class="badge b-${luck} serif">${luck}</span></div>
+       <div class="poem serif" style="font-size:17px;margin:8px 0 10px;">${poem.map(l=>`<div>${l}</div>`).join("")}</div>
+       <div class="jie">${jie}</div>
+     </div>
+     ${adviceBlock(resolveCat(w), tarotTone(draw))}
+     <div class="acts"><button class="act share" id="tShare">分享 ⤴</button></div>
+   </div></div>`;
+  $("#tShare").addEventListener("click",()=>{
+    const body=draw.map(d=>`${d.pos}：${d.card.zh}（${d.rev?'逆位':'正位'}）`).join("\n");
+    share(`【玄機籤閣 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n籤 · 第${qi+1}籤 ${luck}：${poem.join("　")}`);
+  });
+  logEntry("spread:dongxi", draw.map(d=>d.card.zh+(d.rev?"(逆)":"(正)")).join("／")+`＋第${qi+1}籤`, w);
+  requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+}
+function showTarot(draw){
   $("#tSlip").innerHTML=`
    <div class="slip">
      <div class="stub"></div>
      <div class="body">
        ${wishHTML("#tAsk")}
-       <div class="tread">${rows}</div>
+       <div class="tread">${tarotRowsHTML(draw)}</div>
        ${adviceBlock(resolveCat($("#tAsk").value.trim()), tarotTone(draw))}
        <div class="acts"><button class="act share" id="tShare">分享 ⤴</button></div>
      </div>
@@ -1256,6 +1351,7 @@ function showTarot(draw){
 }
 $("#tS1").addEventListener("click",()=>tSetSpread(1));
 $("#tS3").addEventListener("click",()=>tSetSpread(3));
+$("#tSX").addEventListener("click",()=>tSetSpread("x"));
 $("#tBtn").addEventListener("click",drawTarot);
 tResetStage();
 
