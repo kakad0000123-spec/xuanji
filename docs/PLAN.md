@@ -98,7 +98,10 @@
    之後任何新陣（先筊後籤、卦+塔羅互參）＝ SPREADS 加一筆，不寫新程式。
    AI 合約不用改（payload 泛型天生吃混合結果）；logEntry type 用 `spread:<id>`。
 
-**v1.1f 收口**：紀錄簿 UI（讀 journal 時間軸）＋ 分享圖卡（canvas 共用繪卡器，各功能餵資料）
+**v1.1f 收口** ✅ 已完成（2026-07-07）：
+- ✅ 紀錄簿 UI：header 📖 入口 → modal 時間軸（讀 xj_journal，按日分組、類型徽章、清空）。
+- ✅ 分享圖卡：Canvas 共用繪卡器 drawShareCard(cfg)＋shareCard()（Web Share 傳檔＋下載＋文字三層退路）；求籤/塔羅/今日運勢已餵資料出圖，餘者仍走文字 share()。
+- **v1.1 全部完成**。下一站 v1.5 SEO / v2.0 AI（見 §4、§5）。
 
 **v1.5 SEO 資產**（見 §5）→ **v2.0 AI 深度解讀**（見 §4）→ 數據說話後才排變現。
 

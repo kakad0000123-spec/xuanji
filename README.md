@@ -9,6 +9,7 @@
 - `zodiac-data.js` — 星座資料：12 星座/元素配對規則/每日運勢文案池/水逆日期表（2026–2027，已查證：Old Farmer's Almanac、Britannica、Astro-Seek 三源一致）。運勢＝seedRnd(日期^星座) 套版組合，同日同座固定；月相用 lunar.js `getYueXiang`＋農曆日近似。
 - `cards/` — 塔羅牌面圖（Rider-Waite-Smith 1909，公有領域；圖檔取自 [metabismuth/tarot-json](https://github.com/metabismuth/tarot-json)，350×600）。
 - `docs/VISUAL_DIRECTION.md` — 視覺與動畫 SSOT：紅金廟宇感、motion layer 判準、AI 參考圖路徑、否決項。
+- **功能**：求問（求籤/抽卦/擲筊）｜塔羅（單張/三張/東西合參）｜星座（今日運勢/配對/月相水逆）｜曆法（今日氣場/農民曆）；紀錄簿（📖 時間軸）、問事分類四段解讀、擲筊請示閘門、Canvas 分享圖卡——全離線、免 API。
 - 本機預覽：`python3 -m http.server 8848` 後開 http://localhost:8848
 
 ## 塔羅設計決策（why）

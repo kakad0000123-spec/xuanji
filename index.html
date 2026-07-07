@@ -805,6 +805,70 @@ function share(text){
   else if(navigator.clipboard){ navigator.clipboard.writeText(text).then(()=>toast("已複製，可貼給朋友 🧧"),()=>toast("複製失敗")); }
   else { toast("此裝置不支援分享"); }
 }
+
+// —— 分享圖卡（Canvas 共用繪卡器；離線、Web Share 傳圖＋下載退路）——
+const CARD_SERIF='"Kaiti TC","STKaiti","BiauKai","DFKai-SB","標楷體","Noto Serif TC",serif';
+function rrect(x,rx,ry,w,h,r){ x.beginPath(); x.moveTo(rx+r,ry); x.arcTo(rx+w,ry,rx+w,ry+h,r);
+  x.arcTo(rx+w,ry+h,rx,ry+h,r); x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); }
+function wrapText(x,text,maxW){ const out=[]; let line="";
+  for(const ch of [...String(text)]){ if(ch==="\n"){ out.push(line); line=""; continue; }
+    if(x.measureText(line+ch).width>maxW && line){ out.push(line); line=ch; } else line+=ch; }
+  if(line) out.push(line); return out; }
+function drawShareCard(cfg){
+  return new Promise(resolve=>{
+    const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;
+    const x=c.getContext("2d"); x.textAlign="center"; x.textBaseline="alphabetic";
+    let g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,"#1e160d");g.addColorStop(.55,"#140f0a");g.addColorStop(1,"#0a0705");
+    x.fillStyle=g; x.fillRect(0,0,W,H);
+    g=x.createRadialGradient(W/2,-140,80,W/2,-140,940); g.addColorStop(0,"rgba(215,181,102,.16)");g.addColorStop(1,"rgba(0,0,0,0)");
+    x.fillStyle=g; x.fillRect(0,0,W,H);
+    x.strokeStyle="#c9a24e"; x.lineWidth=3; rrect(x,40,40,W-80,H-80,26); x.stroke();
+    x.strokeStyle="rgba(201,162,78,.4)"; x.lineWidth=1.5; rrect(x,52,52,W-104,H-104,20); x.stroke();
+    x.fillStyle="#e7cd82"; x.font=`700 46px ${CARD_SERIF}`; x.fillText("玄 機 籤 閣", W/2, 140);
+    x.fillStyle="#a68a48"; x.font=`27px ${CARD_SERIF}`; x.fillText(cfg.kind||"", W/2, 184);
+    x.strokeStyle="rgba(201,162,78,.45)"; x.lineWidth=1.5; x.beginPath(); x.moveTo(170,214); x.lineTo(W-170,214); x.stroke();
+    const rest=(y0)=>{
+      let y=y0;
+      if(cfg.title){ x.fillStyle="#f0d78d"; x.font=`700 76px ${CARD_SERIF}`; x.fillText(cfg.title,W/2,y); y+=8; }
+      if(cfg.badge){ y+=54; x.font=`700 32px ${CARD_SERIF}`; const bw=x.measureText(cfg.badge).width+56;
+        x.fillStyle=cfg.badgeColor||"#b8860b"; rrect(x,W/2-bw/2,y-40,bw,52,12); x.fill();
+        x.fillStyle="#fff8ee"; x.fillText(cfg.badge,W/2,y-4); y+=16; }
+      if(cfg.wish){ y+=52; x.fillStyle="#c0955a"; x.font=`30px ${CARD_SERIF}`;
+        x.fillText("所問 · "+wrapText(x,cfg.wish,W-260)[0], W/2, y); }
+      if(cfg.lines&&cfg.lines.length){ y+=76; x.fillStyle="#efe0bd"; x.font=`46px ${CARD_SERIF}`;
+        cfg.lines.forEach(l=>{ x.fillText(l,W/2,y); y+=70; }); }
+      if(cfg.note){ y+=34; x.fillStyle="#d7c398"; x.font=`34px ${CARD_SERIF}`; x.textAlign="left";
+        wrapText(x,cfg.note,W-220).forEach(l=>{ x.fillText(l,110,y); y+=52; }); x.textAlign="center"; }
+      x.fillStyle="#8a7340"; x.font=`26px ${CARD_SERIF}`;
+      x.textAlign="left"; x.fillText(cfg.date||"", 74, H-62);
+      x.textAlign="right"; x.fillText("xuanji-kappa.vercel.app", W-74, H-62);
+      c.toBlob(b=>resolve(b),"image/png");
+    };
+    if(cfg.cardImg){
+      const im=new Image();
+      im.onload=()=>{ const iw=286, ih=iw*im.height/im.width, ix=(W-iw)/2, iy=250;
+        x.save(); x.strokeStyle="#c9a24e"; x.lineWidth=3; rrect(x,ix-4,iy-4,iw+8,ih+8,10); x.stroke();
+        rrect(x,ix,iy,iw,ih,6); x.clip(); x.drawImage(im,ix,iy,iw,ih); x.restore();
+        rest(iy+ih+80); };
+      im.onerror=()=>rest(320);
+      im.src=cfg.cardImg;
+    } else rest(cfg.lines?368:410);
+  });
+}
+async function shareCard(cfg){
+  try{
+    const blob=await drawShareCard(cfg);
+    const file=new File([blob],"xuanji.png",{type:"image/png"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], text:cfg.shareText||""}); return;
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download="xuanji.png"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000); toast("圖卡已存下，可分享給朋友 🧧");
+  }catch(e){ if(cfg.shareText) share(cfg.shareText); else toast("圖卡產生失敗"); }
+}
+const LUCK_COLOR={上上籤:"#b3261a",上吉籤:"#c65a10",中吉籤:"#b8860b",中平籤:"#6f7a4a",下下籤:"#5a4a3a"};
+const cardDate = d => fmtI(d||new Date()).replace(/-/g,"/");
 function wishHTML(sel){ const v=$(sel).value.trim(); return v?`<div class="wish">所問 · ${escapeHTML(v)}</div>`:""; }
 
 // —— 問事分類 + 四段式套版解讀（求籤/塔羅共用）——
@@ -1025,7 +1089,9 @@ function showQian(i, date){
    </div>`;
   $("#qShare").addEventListener("click",()=>{
     const w=$("#qAsk").value.trim();
-    share(`【玄機籤閣】第${i+1}籤 ${luck}\n${w?"所問："+w+"\n":""}${poem.join("　")}\n\n${jie}`);
+    shareCard({kind:"每日求籤", title:`第 ${i+1} 籤`, badge:luck, badgeColor:LUCK_COLOR[luck],
+      wish:w, lines:poem, note:jie, date:cardDate(date),
+      shareText:`【玄機籤閣】第${i+1}籤 ${luck}\n${w?"所問："+w+"\n":""}${poem.join("　")}\n\n${jie}`});
   });
 }
 $("#qBtn").addEventListener("click",drawQian);
@@ -1372,7 +1438,14 @@ function showTarot(draw){
   $("#tShare").addEventListener("click",()=>{
     const w=$("#tAsk").value.trim();
     const body=draw.map(d=>`${d.pos?d.pos+"：":""}${d.card.zh}（${d.rev?'逆位':'正位'}）${d.rev?d.card.rev:d.card.up}`).join("\n");
-    share(`【玄機籤閣 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`);
+    const single=draw.length===1;
+    shareCard({kind:"塔羅占卜", cardImg: single?`cards/${draw[0].card.img}`:null,
+      title: single?draw[0].card.zh:"塔羅 · 三張牌",
+      badge: single?(draw[0].rev?"逆位":"正位"):null, badgeColor: draw[0].rev?"#8f2519":"#3f7a3a",
+      wish:w,
+      lines: single?null:draw.map(d=>`${d.pos}：${d.card.zh}${d.rev?"（逆）":"（正）"}`),
+      note: single?(draw[0].rev?draw[0].card.rev:draw[0].card.up):"",
+      date:cardDate(), shareText:`【玄機籤閣 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`});
   });
   logEntry("tarot", draw.map(d=>`${d.card.zh}${d.rev?"(逆)":"(正)"}`).join("／"), $("#tAsk").value.trim());
   requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
@@ -1496,8 +1569,12 @@ function renderZFortune(){
      ${retro}
      <div class="acts"><button class="act share" id="zShare">分享 ⤴</button></div>
    </div></div>`;
-  $("#zShare").addEventListener("click",()=>share(
-    `【玄機籤閣 · ${z.nm}今日運勢 ${fmtI(now).replace(/-/g,"/")}】\n整體${"★".repeat(avg)} ${otx}\n愛情${"★".repeat(st.love)} ${tx.love}\n工作${"★".repeat(st.work)} ${tx.work}\n財運${"★".repeat(st.money)} ${tx.money}\n幸運色 ${color}｜幸運數字 ${num}`));
+  $("#zShare").addEventListener("click",()=>shareCard({
+    kind:"今日運勢", title:`${z.sym} ${z.nm}`,
+    lines:[`整體 ${"★".repeat(avg)}${"☆".repeat(5-avg)}`,`愛情 ${"★".repeat(st.love)}${"☆".repeat(5-st.love)}`,
+           `工作 ${"★".repeat(st.work)}${"☆".repeat(5-st.work)}`,`財運 ${"★".repeat(st.money)}${"☆".repeat(5-st.money)}`],
+    note:`${otx}\n幸運色 ${color}｜幸運數字 ${num}｜${tip}`, date:cardDate(now),
+    shareText:`【玄機籤閣 · ${z.nm}今日運勢 ${fmtI(now).replace(/-/g,"/")}】\n整體${"★".repeat(avg)} ${otx}\n愛情${"★".repeat(st.love)} ${tx.love}\n工作${"★".repeat(st.work)} ${tx.work}\n財運${"★".repeat(st.money)} ${tx.money}\n幸運色 ${color}｜幸運數字 ${num}`}));
 }
 $("#zGrid").addEventListener("click",e=>{
   const b=e.target.closest(".zbtn"); if(!b) return;
