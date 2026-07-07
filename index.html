@@ -46,13 +46,13 @@
   .chip small{color:var(--gold-d);}
 
   /* ---------- Tabs ---------- */
-  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:11px 0;}
+  .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:11px 0;}
   .tab{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
-    border-radius:12px;padding:10px 2px 9px;text-align:center;cursor:pointer;color:var(--gold);
+    border-radius:11px;padding:9px 1px 8px;text-align:center;cursor:pointer;color:var(--gold);
     transition:transform .12s, box-shadow .2s;}
   .tab:active{transform:scale(.97);}
-  .tab .ic{font-size:20px;display:block;margin-bottom:4px;filter:grayscale(.15);}
-  .tab .tx{font-size:13px;letter-spacing:0;}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px;filter:grayscale(.15);}
+  .tab .tx{font-size:12px;letter-spacing:0;white-space:nowrap;}
   .tab.on{background:linear-gradient(180deg,#f2da8e,#cba455);color:#3a2c12;border-color:#e7cd82;
     box-shadow:0 0 18px rgba(215,181,102,.4);font-weight:700;}
   .tab.on .ic{filter:none;}
@@ -238,6 +238,40 @@
   .alma .tag{cursor:pointer;transition:background .15s;}
   .alma .tag:active{background:rgba(120,60,20,.22);}
   .alma .foot span[data-tip]{cursor:pointer;border-bottom:1px dotted rgba(120,60,20,.5);}
+
+  /* ---------- 塔羅 ---------- */
+  .tstage{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;
+    margin:14px auto 6px;min-height:196px;}
+  .tback{border-radius:9px;border:1px solid var(--gold-d);display:flex;align-items:center;justify-content:center;
+    color:var(--gold-d);background:
+      radial-gradient(circle at 50% 50%,rgba(215,181,102,.14),transparent 60%),
+      repeating-linear-gradient(45deg,rgba(215,181,102,.08) 0 6px,transparent 6px 12px),
+      linear-gradient(180deg,#1c1712,#0b0806);
+    box-shadow:inset 0 0 22px rgba(0,0,0,.6);}
+  .tstage.s1 .tback{width:118px;height:200px;font-size:40px;}
+  .tstage.s3 .tback{width:96px;height:164px;font-size:30px;}
+  .tcard{position:relative;border-radius:9px;overflow:hidden;border:1px solid var(--gold-d);
+    background:#0b0806;box-shadow:0 4px 16px rgba(0,0,0,.55);animation:fade .35s;}
+  .tstage.s1 .tcard{width:150px;} .tstage.s3 .tcard{width:98px;}
+  .tcard img{display:block;width:100%;height:auto;}
+  .tcard.rev img{transform:rotate(180deg);}
+  .tcard .plabel{position:absolute;top:0;left:0;right:0;background:rgba(120,20,10,.85);color:#ffeede;
+    font-size:11px;text-align:center;padding:2px 0;letter-spacing:1px;}
+  .tcard .rvb{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.62);
+    color:var(--gold-b);font-size:11px;text-align:center;padding:2px 0;letter-spacing:1px;}
+  .tread .rc{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed rgba(120,60,20,.3);}
+  .tread .rc:first-child{padding-top:0;}
+  .tread .rc:last-child{border-bottom:none;padding-bottom:0;}
+  .tread .rc .th{flex:0 0 54px;}
+  .tread .rc .th img{width:54px;border-radius:5px;display:block;border:1px solid rgba(120,60,20,.3);}
+  .tread .rc .th img.rev{transform:rotate(180deg);}
+  .tread .rc .tt{flex:1;min-width:0;}
+  .tread .rc .nm{font-weight:700;color:#7a1e14;font-size:16px;}
+  .tread .rc .ori{display:inline-block;font-size:11px;padding:1px 8px;border-radius:4px;color:#fff;margin-left:7px;vertical-align:2px;}
+  .tread .rc .ori.up{background:#3f7a3a;} .tread .rc .ori.rev{background:#8f2519;}
+  .tread .rc .pos2{font-size:12px;color:#8a6a3a;margin:1px 0;}
+  .tread .rc .kw{font-size:12px;color:#8a6a3a;margin:2px 0;}
+  .tread .rc .mn{font-size:14px;color:#3c2f1e;line-height:1.7;}
   .alma .tip{margin:0 14px;padding:10px 0;font-size:13px;color:#4a3420;line-height:1.65;
     border-top:1px dashed rgba(120,60,20,.3);}
   .alma .tip b{color:#7a1e14;}
@@ -272,6 +306,7 @@
     <div class="tab on" data-v="qian"><span class="ic">🎍</span><span class="tx serif">求籤</span></div>
     <div class="tab" data-v="gua"><span class="ic">☯️</span><span class="tx serif">抽卦</span></div>
     <div class="tab" data-v="jiao"><span class="ic">🥮</span><span class="tx serif">擲筊</span></div>
+    <div class="tab" data-v="tarot"><span class="ic">🔮</span><span class="tx serif">塔羅</span></div>
     <div class="tab" data-v="almanac"><span class="ic">📜</span><span class="tx serif">農民曆</span></div>
   </div>
 
@@ -333,6 +368,21 @@
       </div>
     </div>
 
+    <!-- ===== 塔羅 ===== -->
+    <div class="view" id="v-tarot">
+      <textarea class="ask" id="tAsk" rows="1" placeholder="想問塔羅的事（可留空）…"></textarea>
+      <div class="daterow">
+        <div class="seg">
+          <button class="segbtn on" id="tS1">單張</button>
+          <button class="segbtn" id="tS3">三張</button>
+        </div>
+        <span style="font-size:12.5px;color:var(--gold-d);" id="tHint">抽一張看當下指引</span>
+      </div>
+      <div class="tstage s1" id="tStage"></div>
+      <button class="btn gold serif" id="tBtn">抽 牌</button>
+      <div id="tSlip"></div>
+    </div>
+
     <!-- ===== 農民曆 ===== -->
     <div class="view" id="v-almanac">
       <div class="daterow">
@@ -361,6 +411,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="lunar.js"></script>
+<script src="tarot-data.js"></script>
 <script>
 "use strict";
 
@@ -844,6 +895,78 @@ $("#swBless").addEventListener("click",function(){ optBless=!optBless; this.clas
   if(s){ tally=s.tally||tally; streak=s.streak||0; optStreak=!!s.optStreak; optBless=!!s.optBless;
     $("#swStreak").classList.toggle("on",optStreak); $("#swBless").classList.toggle("on",optBless); renderTally(); }
 })();
+
+/* ============================================================
+   5) 塔羅（RWS 78 張，正/逆位，單張／三張牌陣；離線）
+   ============================================================ */
+const tStage=$("#tStage");
+let tSpread=1, tDrawing=false;
+const T_POS={1:["指引"], 3:["過去","現在","未來"]};
+function tResetStage(){
+  tStage.innerHTML = Array.from({length:tSpread},()=>'<div class="tback">🔮</div>').join("");
+}
+function tSetSpread(n){
+  tSpread=n;
+  $("#tS1").classList.toggle("on",n===1);
+  $("#tS3").classList.toggle("on",n===3);
+  $("#tHint").textContent = n===1 ? "抽一張看當下指引" : "抽三張看過去·現在·未來";
+  tStage.className="tstage s"+n;
+  $("#tSlip").innerHTML=""; tResetStage();
+}
+function tCardHTML(d){
+  const pl=d.pos?`<div class="plabel">${d.pos}</div>`:"";
+  return `<div class="tcard${d.rev?' rev':''}">${pl}<img src="cards/${d.card.img}" alt="${d.card.zh}" loading="lazy"><div class="rvb">${d.rev?'逆位':'正位'}</div></div>`;
+}
+function drawTarot(){
+  if(tDrawing) return;
+  if(!window.TAROT || !TAROT.length){ toast("牌組載入中，請稍候…"); return; }
+  tDrawing=true; buzz(20); $("#tBtn").disabled=true; $("#tSlip").innerHTML="";
+  const idx=[]; while(idx.length<tSpread){ const r=rnd(TAROT.length); if(!idx.includes(r)) idx.push(r); }
+  const draw=idx.map((i,k)=>({card:TAROT[i], rev:Math.random()<0.5, pos:(T_POS[tSpread]||[])[k]||""}));
+  tResetStage();
+  const backs=[...tStage.children];
+  draw.forEach((d,k)=>{
+    setTimeout(()=>{
+      buzz(15);
+      backs[k].outerHTML = tCardHTML(d);
+      if(k===tSpread-1){ tDrawing=false; $("#tBtn").disabled=false; showTarot(draw); }
+    }, 280*(k+1));
+  });
+}
+function showTarot(draw){
+  const rows=draw.map(d=>{
+    const meaning=d.rev?d.card.rev:d.card.up;
+    const posline=d.pos?`<div class="pos2">${d.pos}</div>`:"";
+    return `<div class="rc">
+      <div class="th"><img class="${d.rev?'rev':''}" src="cards/${d.card.img}" alt=""></div>
+      <div class="tt">
+        <div><span class="nm">${d.card.zh}</span><span class="ori ${d.rev?'rev':'up'}">${d.rev?'逆位':'正位'}</span></div>
+        ${posline}
+        <div class="kw">${d.card.kw}</div>
+        <div class="mn">${meaning}</div>
+      </div>
+    </div>`;
+  }).join("");
+  $("#tSlip").innerHTML=`
+   <div class="slip">
+     <div class="stub"></div>
+     <div class="body">
+       ${wishHTML("#tAsk")}
+       <div class="tread">${rows}</div>
+       <div class="acts"><button class="act share" id="tShare">分享 ⤴</button></div>
+     </div>
+   </div>`;
+  $("#tShare").addEventListener("click",()=>{
+    const w=$("#tAsk").value.trim();
+    const body=draw.map(d=>`${d.pos?d.pos+"：":""}${d.card.zh}（${d.rev?'逆位':'正位'}）${d.rev?d.card.rev:d.card.up}`).join("\n");
+    share(`【玄機籤閣 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`);
+  });
+  requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+}
+$("#tS1").addEventListener("click",()=>tSetSpread(1));
+$("#tS3").addEventListener("click",()=>tSetSpread(3));
+$("#tBtn").addEventListener("click",drawTarot);
+tResetStage();
 
 /* ============================================================
    4) 農民曆（選日期看黃曆：農曆日期／干支／節氣／建除／宜忌／沖煞方位）
