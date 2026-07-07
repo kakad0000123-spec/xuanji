@@ -262,23 +262,25 @@
   /* ---------- 塔羅 ---------- */
   .tstage{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;
     margin:14px auto 6px;min-height:196px;}
-  .tback{border-radius:9px;border:1px solid var(--gold-d);display:flex;align-items:center;justify-content:center;
-    color:var(--gold-d);background:
-      radial-gradient(circle at 50% 50%,rgba(215,181,102,.14),transparent 60%),
-      repeating-linear-gradient(45deg,rgba(215,181,102,.08) 0 6px,transparent 6px 12px),
-      linear-gradient(180deg,#1c1712,#0b0806);
-    box-shadow:inset 0 0 22px rgba(0,0,0,.6);}
-  .tstage.s1 .tback{width:118px;height:200px;font-size:40px;}
-  .tstage.s3 .tback{width:96px;height:164px;font-size:30px;}
-  .tcard{position:relative;border-radius:9px;overflow:hidden;border:1px solid var(--gold-d);
-    background:#0b0806;box-shadow:0 4px 16px rgba(0,0,0,.55);animation:fade .35s;}
-  .tstage.s1 .tcard{width:150px;} .tstage.s3 .tcard{width:98px;}
-  .tcard img{display:block;width:100%;height:auto;}
-  .tcard.rev img{transform:rotate(180deg);}
-  .tcard .plabel{position:absolute;top:0;left:0;right:0;background:rgba(120,20,10,.85);color:#ffeede;
-    font-size:11px;text-align:center;padding:2px 0;letter-spacing:1px;}
-  .tcard .rvb{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.62);
-    color:var(--gold-b);font-size:11px;text-align:center;padding:2px 0;letter-spacing:1px;}
+  /* 翻牌：牌背/牌面同容器 3D flip（棄 outerHTML） */
+  .flip{perspective:900px;flex:0 0 auto;}
+  .tstage.s1 .flip{width:150px;height:257px;}
+  .tstage.s3 .flip{width:98px;height:168px;}
+  .flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;
+    transition:transform .6s var(--ease-out);}
+  .flip.flipped .flip-inner{transform:rotateY(180deg);}
+  .flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:9px;overflow:hidden;}
+  .flip-back{background:#0b0806;box-shadow:0 4px 16px rgba(0,0,0,.55);}
+  .flip-back svg{width:100%;height:100%;display:block;}
+  .flip-front{transform:rotateY(180deg);border:1px solid var(--gold-d);background:#0b0806;
+    box-shadow:0 4px 16px rgba(0,0,0,.55);}
+  .flip-front img{width:100%;height:100%;object-fit:cover;display:block;}
+  .flip-front.rev img{transform:rotate(180deg);}
+  .flip-front .plabel{position:absolute;top:0;left:0;right:0;background:rgba(120,20,10,.85);color:#ffeede;
+    font-size:11px;text-align:center;padding:2px 0;letter-spacing:1px;z-index:1;}
+  .flip-front .rvb{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.62);
+    color:var(--gold-b);font-size:11px;text-align:center;padding:2px 0;letter-spacing:1px;z-index:1;}
   .tread .rc{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed rgba(120,60,20,.3);}
   .tread .rc:first-child{padding-top:0;}
   .tread .rc:last-child{border-bottom:none;padding-bottom:0;}
@@ -366,6 +368,7 @@
   :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;}
   @media(prefers-reduced-motion:reduce){
     .glow-breathe{animation:none;}
+    .flip-inner{transition-duration:.01s !important;}
     *{animation-duration:.15s !important;animation-iteration-count:1 !important;}
   }
 </style>
@@ -1137,8 +1140,44 @@ $("#swBless").addEventListener("click",function(){ optBless=!optBless; this.clas
 const tStage=$("#tStage");
 let tSpread=1, tDrawing=false;
 const T_POS={1:["指引"], 3:["過去","現在","未來"]};
+// CSS/SVG 太極八卦牌背（複用資料層 TRI 的八卦爻位，對齊 VISUAL_DIRECTION 黑紅金）
+function cardBackSVG(){
+  const order=["乾","兌","離","震","巽","坎","艮","坤"], cx=50, cy=85, R=31;
+  let tri="";
+  order.forEach((nm,i)=>{
+    const ang=(i/8)*2*Math.PI - Math.PI/2;
+    const tx=(cx+Math.cos(ang)*R).toFixed(1), ty=(cy+Math.sin(ang)*R).toFixed(1);
+    let L="";
+    TRI[nm].forEach((b,li)=>{ const y=(-3+li*3-0.7).toFixed(1);
+      L += b ? `<rect x="-5" y="${y}" width="10" height="1.4" rx="0.6" fill="#e7cd82"/>`
+             : `<rect x="-5" y="${y}" width="4" height="1.4" rx="0.6" fill="#e7cd82"/><rect x="1" y="${y}" width="4" height="1.4" rx="0.6" fill="#e7cd82"/>`;
+    });
+    tri += `<g transform="translate(${tx},${ty})">${L}</g>`;
+  });
+  return `<svg viewBox="0 0 100 171" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <rect x="1.5" y="1.5" width="97" height="168" rx="9" fill="#14100b"/>
+    <rect x="5" y="5" width="90" height="161" rx="7" fill="#3a120c"/>
+    <rect x="5" y="5" width="90" height="161" rx="7" fill="none" stroke="#c9a24e" stroke-width="1.6"/>
+    <rect x="9" y="9" width="82" height="153" rx="5" fill="none" stroke="rgba(201,162,78,.5)" stroke-width="0.8"/>
+    <circle cx="50" cy="85" r="38" fill="none" stroke="rgba(201,162,78,.5)" stroke-width="0.8"/>
+    <circle cx="50" cy="85" r="22" fill="none" stroke="rgba(201,162,78,.5)" stroke-width="0.8"/>
+    ${tri}
+    <circle cx="50" cy="85" r="16" fill="#7d1e13"/>
+    <path d="M50,69 A16,16 0 0,1 50,101 A8,8 0 0,1 50,85 A8,8 0 0,0 50,69 Z" fill="#e7cd82"/>
+    <circle cx="50" cy="77" r="2.6" fill="#7d1e13"/><circle cx="50" cy="93" r="2.6" fill="#e7cd82"/>
+    <circle cx="50" cy="85" r="16" fill="none" stroke="#e7cd82" stroke-width="1.3"/>
+  </svg>`;
+}
+function tFrontHTML(d){
+  const pl=d.pos?`<div class="plabel">${d.pos}</div>`:"";
+  return `${pl}<img src="cards/${d.card.img}" alt="${d.card.zh}" loading="lazy"><div class="rvb">${d.rev?'逆位':'正位'}</div>`;
+}
+function flipCard(d){
+  return `<div class="flip"><div class="flip-inner"><div class="flip-face flip-back">${cardBackSVG()}</div>`
+       + `<div class="flip-face flip-front${d&&d.rev?' rev':''}">${d?tFrontHTML(d):""}</div></div></div>`;
+}
 function tResetStage(){
-  tStage.innerHTML = Array.from({length:tSpread},()=>'<div class="tback">🔮</div>').join("");
+  tStage.innerHTML = Array.from({length:tSpread},()=>flipCard(null)).join("");
 }
 function tSetSpread(n){
   tSpread=n;
@@ -1148,24 +1187,23 @@ function tSetSpread(n){
   tStage.className="tstage s"+n;
   $("#tSlip").innerHTML=""; tResetStage();
 }
-function tCardHTML(d){
-  const pl=d.pos?`<div class="plabel">${d.pos}</div>`:"";
-  return `<div class="tcard${d.rev?' rev':''}">${pl}<img src="cards/${d.card.img}" alt="${d.card.zh}" loading="lazy"><div class="rvb">${d.rev?'逆位':'正位'}</div></div>`;
-}
 function drawTarot(){
   if(tDrawing) return;
   if(!window.TAROT || !TAROT.length){ toast("牌組載入中，請稍候…"); return; }
   tDrawing=true; buzz(20); $("#tBtn").disabled=true; $("#tSlip").innerHTML="";
   const idx=[]; while(idx.length<tSpread){ const r=rnd(TAROT.length); if(!idx.includes(r)) idx.push(r); }
   const draw=idx.map((i,k)=>({card:TAROT[i], rev:Math.random()<0.5, pos:(T_POS[tSpread]||[])[k]||""}));
-  tResetStage();
-  const backs=[...tStage.children];
+  // 建卡：背面朝上、front 已備妥；再逐張翻開（同容器 3D flip）
+  tStage.innerHTML = draw.map(d=>flipCard(d)).join("");
+  const cards=[...tStage.querySelectorAll('.flip')];
+  const step = reduceMotion()?60:300, flipWait = reduceMotion()?40:640;
   draw.forEach((d,k)=>{
     setTimeout(()=>{
-      buzz(15);
-      backs[k].outerHTML = tCardHTML(d);
-      if(k===tSpread-1){ tDrawing=false; $("#tBtn").disabled=false; showTarot(draw); }
-    }, 280*(k+1));
+      buzz(15); cards[k].classList.add("flipped");
+      if(k===tSpread-1){
+        setTimeout(()=>{ tDrawing=false; $("#tBtn").disabled=false; showTarot(draw); }, flipWait);
+      }
+    }, step*(k+1));
   });
 }
 function showTarot(draw){
