@@ -294,22 +294,25 @@
   .tstage.s1 .flip{width:150px;height:257px;}
   .tstage.s3 .flip{width:98px;height:168px;}
   .flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;}
-  .flip.flipped .flip-inner{transform:rotateY(180deg);animation:flipTurn .9s cubic-bezier(.34,.85,.36,1);}
+  .flip.flipped .flip-inner{transform:rotateY(180deg);animation:flipTurn 1.05s cubic-bezier(.34,.85,.36,1);}
   /* 翻牌中段抬升＋放大＝重量感（transform 終值由上行 rotateY(180deg) 固定） */
   @keyframes flipTurn{0%{transform:rotateY(0) scale(1);}
-    45%{transform:rotateY(88deg) scale(1.07) translateY(-10px);}
+    45%{transform:rotateY(88deg) scale(1.1) translateY(-18px);}
     100%{transform:rotateY(180deg) scale(1) translateY(0);}}
   /* 塔羅儀式敘事：清桌(收牌) → 發牌 → 凝神(前搖) → 翻牌 → 落定 → 領會
      收牌沉下淡出、發牌浮上——同一個「桌面」方向語彙 */
-  @keyframes gatherOut{to{opacity:0;transform:translateY(36px) scale(.88);}}
-  .flip.gathering{animation:gatherOut .32s var(--ease-out) both;}
-  #tSlip .slip.fading{opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s;}
-  @keyframes dealIn{from{opacity:0;transform:translateY(64px) scale(.84);}to{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes armGlow{0%{filter:none;}50%{filter:drop-shadow(0 0 18px var(--glow-gold)) brightness(1.18);}100%{filter:none;}}
-  @keyframes frontGlow{0%{filter:none;}30%{filter:drop-shadow(0 0 20px var(--glow-gold));}100%{filter:none;}}
-  .flip.dealing{animation:dealIn .52s both var(--ease-out);}
-  .flip.arming .flip-back{animation:armGlow .2s ease-out;}
-  .flip.settled .flip-front{animation:frontGlow .55s ease-out;}
+  @keyframes gatherOut{to{opacity:0;transform:translateY(80px) scale(.82);}}
+  .flip.gathering{animation:gatherOut .5s var(--ease-out) both;}
+  #tSlip .slip.fading{opacity:0;transform:translateY(14px);transition:opacity .4s,transform .4s;}
+  @keyframes dealIn{from{opacity:0;transform:translateY(110px) scale(.8);}to{opacity:1;transform:translateY(0) scale(1);}}
+  /* 凝神：牌實際抬起＋金光（暗底用 box-shadow 比 drop-shadow 醒目） */
+  @keyframes armLift{0%{transform:translateY(0);}45%{transform:translateY(-12px);}100%{transform:translateY(0);}}
+  @keyframes armGlow{0%{box-shadow:0 4px 16px rgba(0,0,0,.55);}45%{box-shadow:0 0 30px var(--glow-gold),0 0 8px var(--gold-b);}100%{box-shadow:0 4px 16px rgba(0,0,0,.55);}}
+  @keyframes frontGlow{0%{box-shadow:0 4px 16px rgba(0,0,0,.55);}35%{box-shadow:0 0 34px var(--glow-gold),0 0 10px var(--gold-b);}100%{box-shadow:0 4px 16px rgba(0,0,0,.55);}}
+  .flip.dealing{animation:dealIn .62s both var(--ease-out);}
+  .flip.arming{animation:armLift .34s ease-out;}
+  .flip.arming .flip-back{animation:armGlow .34s ease-out;}
+  .flip.settled .flip-front{animation:frontGlow .7s ease-out;}
   .flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
     border-radius:9px;overflow:hidden;}
   .flip-back{background:#0b0806;box-shadow:0 4px 16px rgba(0,0,0,.55);}
@@ -1410,8 +1413,8 @@ async function _drawTarot(){
   if(!reduceMotion() && prev.some(c=>c.classList.contains("flipped"))){
     const oldSlip=$("#tSlip .slip");
     if(oldSlip) oldSlip.classList.add("fading");
-    prev.forEach((c,k)=>{ c.style.animationDelay=(k*60)+"ms"; c.classList.add("gathering"); });
-    await new Promise(r=>setTimeout(r, 60*(prev.length-1)+380));   // 收完＋留白一拍
+    prev.forEach((c,k)=>{ c.style.animationDelay=(k*90)+"ms"; c.classList.add("gathering"); });
+    await new Promise(r=>setTimeout(r, 90*(prev.length-1)+560));   // 收完＋留白一拍
   }
   $("#tSlip").innerHTML="";
   const posArr = tMix ? T_POS.x : (T_POS[tSpread]||[]);
@@ -1425,12 +1428,12 @@ async function _drawTarot(){
   const rm=reduceMotion();
   if(rm){ cards.forEach(c=>c.classList.add("flipped")); setTimeout(done,60); return; }
   // 儀式節奏：發牌落位 → 前搖發光 → 翻牌(有重量) → 落定金光 → 結果卡延後淡入
-  const dealStep=240, dealDur=520, armDur=200, flipStep=420, flipDur=900, tailWait=280;
+  const dealStep=300, dealDur=620, armDur=340, flipStep=560, flipDur=1050, tailWait=320;
   cards.forEach((c,k)=>{ c.style.animationDelay=(k*dealStep)+"ms"; c.classList.add("dealing"); });
   const flipBase=(cards.length-1)*dealStep + dealDur + 100;   // 全部落位後才開翻
   draw.forEach((d,k)=>{
     const t0=flipBase + k*flipStep;
-    setTimeout(()=>{ cards[k].classList.remove("dealing"); replay(cards[k],"arming"); }, t0);           // 前搖金邊
+    setTimeout(()=>{ cards[k].classList.remove("dealing"); cards[k].style.animationDelay=""; replay(cards[k],"arming"); }, t0);  // 前搖（清掉發牌殘留的 delay）
     setTimeout(()=>{ buzz(15); cards[k].classList.remove("arming"); cards[k].classList.add("flipped"); }, t0+armDur);
     setTimeout(()=>{ cards[k].classList.add("settled"); }, t0+armDur+flipDur);                          // 落定金光
     if(k===tSpread-1) setTimeout(done, t0+armDur+flipDur+tailWait);                                     // 結果延後
