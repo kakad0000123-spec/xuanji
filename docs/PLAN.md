@@ -1,4 +1,4 @@
-# 玄機籤閣 — 整體架構規劃（SSOT）
+# 玄問 — 整體架構規劃（SSOT）
 
 > 2026-07-07 定稿。之後加功能**先讀本檔**：位子在哪、接哪些共用件、排在哪一版。
 > 改了架構決策要回來改本檔（superseded 標註，不刪）。
@@ -86,17 +86,7 @@
 - ✅ 東西合參混合牌陣：3 塔羅（現在/阻礙/未來）＋1 籤總結，logEntry `spread:dongxi`
 - ✅ 擲筊確認流程：xj_settings.ritual 開關，求籤/抽牌前 requestBlessing 閘門，聖筊才開抽
 - 純函式化：throwBlock/verdictOf 本就純；pickQian 已抽出；tarotRowsHTML 抽共用。
-2. 擲筊確認流程（xj_settings 開關，包在抽籤/抽牌前）。
-3. **儀式管線（SPREADS 註冊表）**——本產品的差異化核心。牌陣＝槽位序列，**每槽可來自不同系統**：
-   ```js
-   { id:"dongxi", name:"東西合參", steps:[
-     {source:"jiao",  role:"請示", gate:true},      // 聖筊才開抽
-     {source:"tarot", role:"現在"},{source:"tarot", role:"阻礙"},{source:"tarot", role:"未來"},
-     {source:"qian",  role:"總結提醒"},
-     {source:"almanac", role:"今日時運", context:true} ]}
-   ```
-   之後任何新陣（先筊後籤、卦+塔羅互參）＝ SPREADS 加一筆，不寫新程式。
-   AI 合約不用改（payload 泛型天生吃混合結果）；logEntry type 用 `spread:<id>`。
+- 註：目前東西合參為直寫實作；**等第二個混合陣出現時**再抽象成 SPREADS 註冊表（槽位序列、每槽指定 source、gate 擲筊關卡）——一個陣就上抽象是過度設計。AI 合約不用改（payload 泛型）；logEntry type 沿用 `spread:<id>`。
 
 **v1.1f 收口** ✅ 已完成（2026-07-07）：
 - ✅ 紀錄簿 UI：header 📖 入口 → modal 時間軸（讀 xj_journal，按日分組、類型徽章、清空）。

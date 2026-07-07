@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>玄機籤閣</title>
+<title>玄問</title>
 <style>
   :root{
     --bg:#0c0a08; --bg2:#141009; --panel:#1a1510; --panel2:#221a12;
@@ -39,7 +39,7 @@
   .frame::after{bottom:8px;right:8px;border-bottom:2px solid var(--gold);border-right:2px solid var(--gold);border-bottom-right-radius:4px;}
   .lantern{position:absolute;top:8px;font-size:21px;filter:drop-shadow(0 0 8px rgba(200,40,30,.6));}
   .lantern.l{left:16px;} .lantern.r{right:16px;}
-  .title{text-align:center;font-size:33px;font-weight:700;letter-spacing:4px;margin:0 0 1px;
+  .title{text-align:center;font-size:37px;font-weight:700;letter-spacing:20px;padding-left:20px;margin:0 0 1px;
     background:linear-gradient(180deg,#f6e4a8,#d7b566 55%,#a5813e);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     text-shadow:0 0 22px rgba(215,181,102,.28);}
@@ -427,7 +427,7 @@
   <div class="frame">
     <span class="lantern l">🏮</span>
     <span class="lantern r">🏮</span>
-    <div class="title serif">玄機籤閣</div>
+    <div class="title serif">玄問</div>
     <div class="subtitle serif">求 籤 · 抽 卦 · 擲 筊</div>
     <div class="meta">
       <span class="chip">📅 <span id="mDate"></span></span>
@@ -821,7 +821,7 @@ let toastTimer=null;
 function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("on");
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("on"),2200); }
 function share(text){
-  if(navigator.share){ navigator.share({title:"玄機籤閣",text}).catch(()=>{}); }
+  if(navigator.share){ navigator.share({title:"玄問",text}).catch(()=>{}); }
   else if(navigator.clipboard){ navigator.clipboard.writeText(text).then(()=>toast("已複製，可貼給朋友 🧧"),()=>toast("複製失敗")); }
   else { toast("此裝置不支援分享"); }
 }
@@ -844,7 +844,7 @@ function drawShareCard(cfg){
     x.fillStyle=g; x.fillRect(0,0,W,H);
     x.strokeStyle="#c9a24e"; x.lineWidth=3; rrect(x,40,40,W-80,H-80,26); x.stroke();
     x.strokeStyle="rgba(201,162,78,.4)"; x.lineWidth=1.5; rrect(x,52,52,W-104,H-104,20); x.stroke();
-    x.fillStyle="#e7cd82"; x.font=`700 46px ${CARD_SERIF}`; x.fillText("玄 機 籤 閣", W/2, 140);
+    x.fillStyle="#e7cd82"; x.font=`700 46px ${CARD_SERIF}`; x.fillText("玄　問", W/2, 140);
     x.fillStyle="#a68a48"; x.font=`27px ${CARD_SERIF}`; x.fillText(cfg.kind||"", W/2, 184);
     x.strokeStyle="rgba(201,162,78,.45)"; x.lineWidth=1.5; x.beginPath(); x.moveTo(170,214); x.lineTo(W-170,214); x.stroke();
     const rest=(y0)=>{
@@ -1111,7 +1111,7 @@ function showQian(i, date){
     const w=$("#qAsk").value.trim();
     shareCard({kind:"每日求籤", title:`第 ${i+1} 籤`, badge:luck, badgeColor:LUCK_COLOR[luck],
       wish:w, lines:poem, note:jie, date:cardDate(date),
-      shareText:`【玄機籤閣】第${i+1}籤 ${luck}\n${w?"所問："+w+"\n":""}${poem.join("　")}\n\n${jie}`});
+      shareText:`【玄問】第${i+1}籤 ${luck}\n${w?"所問："+w+"\n":""}${poem.join("　")}\n\n${jie}`});
   });
 }
 $("#qBtn").addEventListener("click",drawQian);
@@ -1203,7 +1203,7 @@ function showGua(i){
    </div>`;
   $("#gShare").addEventListener("click",()=>{
     const w=$("#gAsk").value.trim();
-    share(`【玄機籤閣】${name}卦（${xiang} · 第${n}卦）\n${w?"所問："+w+"\n":""}卦辭：${ci}\n\n${jie}`);
+    share(`【玄問】${name}卦（${xiang} · 第${n}卦）\n${w?"所問："+w+"\n":""}卦辭：${ci}\n\n${jie}`);
   });
 }
 $("#gBtn").addEventListener("click",drawGua);
@@ -1444,7 +1444,7 @@ function showMixed(draw, qi){
    </div></div>`;
   $("#tShare").addEventListener("click",()=>{
     const body=draw.map(d=>`${d.pos}：${d.card.zh}（${d.rev?'逆位':'正位'}）`).join("\n");
-    share(`【玄機籤閣 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n籤 · 第${qi+1}籤 ${luck}：${poem.join("　")}`);
+    share(`【玄問 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n籤 · 第${qi+1}籤 ${luck}：${poem.join("　")}`);
   });
   logEntry("spread:dongxi", draw.map(d=>d.card.zh+(d.rev?"(逆)":"(正)")).join("／")+`＋第${qi+1}籤`, w);
   requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
@@ -1470,7 +1470,7 @@ function showTarot(draw){
       wish:w,
       lines: single?null:draw.map(d=>`${d.pos}：${d.card.zh}${d.rev?"（逆）":"（正）"}`),
       note: single?(draw[0].rev?draw[0].card.rev:draw[0].card.up):"",
-      date:cardDate(), shareText:`【玄機籤閣 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`});
+      date:cardDate(), shareText:`【玄問 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`});
   });
   logEntry("tarot", draw.map(d=>`${d.card.zh}${d.rev?"(逆)":"(正)"}`).join("／"), $("#tAsk").value.trim());
   requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
@@ -1535,7 +1535,7 @@ function renderAura(){
      <div class="acts"><button class="act share" id="auraShare">分享 ⤴</button></div>
    </div></div>`;
   $("#auraShare").addEventListener("click",()=>share(
-    `【玄機籤閣 · 今日氣場 ${fmtI(now).replace(/-/g,"/")}】${a.zhixing}日｜${au.vibe}\n✅ 適合：${au.good.join("、")}\n⛔ 避免：${au.avoid.join("、")}\n🔮 日牌：${card.zh}（正位）${card.up}`));
+    `【玄問 · 今日氣場 ${fmtI(now).replace(/-/g,"/")}】${a.zhixing}日｜${au.vibe}\n✅ 適合：${au.good.join("、")}\n⛔ 避免：${au.avoid.join("、")}\n🔮 日牌：${card.zh}（正位）${card.up}`));
 }
 
 /* ============================================================
@@ -1599,7 +1599,7 @@ function renderZFortune(){
     lines:[`整體 ${"★".repeat(avg)}${"☆".repeat(5-avg)}`,`愛情 ${"★".repeat(st.love)}${"☆".repeat(5-st.love)}`,
            `工作 ${"★".repeat(st.work)}${"☆".repeat(5-st.work)}`,`財運 ${"★".repeat(st.money)}${"☆".repeat(5-st.money)}`],
     note:`${otx}\n幸運色 ${color}｜幸運數字 ${num}｜${tip}`, date:cardDate(now),
-    shareText:`【玄機籤閣 · ${z.nm}今日運勢 ${fmtI(now).replace(/-/g,"/")}】\n整體${"★".repeat(avg)} ${otx}\n愛情${"★".repeat(st.love)} ${tx.love}\n工作${"★".repeat(st.work)} ${tx.work}\n財運${"★".repeat(st.money)} ${tx.money}\n幸運色 ${color}｜幸運數字 ${num}`}));
+    shareText:`【玄問 · ${z.nm}今日運勢 ${fmtI(now).replace(/-/g,"/")}】\n整體${"★".repeat(avg)} ${otx}\n愛情${"★".repeat(st.love)} ${tx.love}\n工作${"★".repeat(st.work)} ${tx.work}\n財運${"★".repeat(st.money)} ${tx.money}\n幸運色 ${color}｜幸運數字 ${num}`}));
 }
 $("#zGrid").addEventListener("click",e=>{
   const b=e.target.closest(".zbtn"); if(!b) return;
@@ -1641,7 +1641,7 @@ $("#pairBtn").addEventListener("click",()=>{
   countUp($("#pairN"), score);
   setTimeout(()=>{ const bar=$("#pairBar"); if(bar) bar.style.width=score+"%"; }, 40);  // 觸發 width 過渡
   $("#pairShare").addEventListener("click",()=>share(
-    `【玄機籤閣 · 星座配對】${A.nm} × ${B.nm}＝${score}分（${tier.name}）\n${tier.desc}`));
+    `【玄問 · 星座配對】${A.nm} × ${B.nm}＝${score}分（${tier.name}）\n${tier.desc}`));
   logEntry("pair", `${A.nm}×${B.nm} ${score}分 ${tier.name}`);
 });
 
