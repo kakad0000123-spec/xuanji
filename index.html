@@ -12,6 +12,10 @@
     --paper:#f2e4c4; --paper2:#e8d3a6; --ink:#3c2f1e;
     --up:#f0d78d; --down:#c98b78;
     --ok:#e2b84f; --dim:#7a6a4d;
+    /* motion layer tokens（v1.1e） */
+    --motion-fast:.18s; --motion-mid:.34s; --motion-ritual:.85s;
+    --ease-out:cubic-bezier(.22,.61,.36,1); --ease-settle:cubic-bezier(.34,1.5,.64,1);
+    --glow-gold:rgba(215,181,102,.6);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
@@ -69,6 +73,13 @@
     border-radius:14px;padding:16px 14px 18px;}
   .view{display:none;} .view.on{display:block;animation:fade .3s;}
   @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  /* ---------- motion layer 共用 keyframes（v1.1e；只動 transform/opacity/filter） ---------- */
+  @keyframes pop{0%{transform:scale(.82);opacity:0;}60%{transform:scale(1.05);opacity:1;}100%{transform:scale(1);}}
+  @keyframes settle{0%{transform:translateY(-7px);}55%{transform:translateY(3px);}100%{transform:translateY(0);}}
+  @keyframes pulseGlow{0%,100%{filter:drop-shadow(0 0 3px var(--glow-gold));}50%{filter:drop-shadow(0 0 11px var(--glow-gold));}}
+  @keyframes landRipple{0%{transform:translate(-50%,-50%) scale(.25);opacity:.85;}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0;}}
+  .animpop{animation:pop var(--motion-fast) var(--ease-settle);}
+  .glow-breathe{animation:pulseGlow 3.4s ease-in-out infinite;}
 
   .ask{width:100%;background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:10px;
     color:var(--gold-b);font-size:15px;padding:14px 14px;resize:none;font-family:inherit;line-height:1.5;}
@@ -133,25 +144,27 @@
   .xiang .info .nm{font-size:24px;font-weight:700;color:#7a1e14;letter-spacing:2px;}
   .xiang .info .sub{font-size:13px;color:#8a6a3a;margin-top:3px;}
 
-  /* ---------- Jiaobei ---------- */
-  .blocks{display:flex;gap:26px;justify-content:center;margin:22px 0 10px;perspective:600px;}
-  .blk{width:120px;height:150px;position:relative;display:flex;align-items:center;justify-content:center;
-    border-radius:50% 50% 46% 46%/62% 62% 40% 40%;font-size:32px;font-weight:700;color:rgba(255,255,255,.92);
-    box-shadow:inset 0 -12px 26px rgba(0,0,0,.4),inset 0 8px 18px rgba(255,255,255,.18),0 8px 20px rgba(0,0,0,.5);
-    transform-style:preserve-3d;transition:transform .1s;}
-  .blk.red{background:radial-gradient(120% 90% at 40% 30%,#e05a48,#b12a1c 70%);}
-  .blk.brown{background:radial-gradient(120% 90% at 40% 30%,#8a7a52,#5c4e2f 70%);color:rgba(255,255,255,.8);}
-  .blk .face{text-shadow:0 1px 3px rgba(0,0,0,.4);}
-  @keyframes tumble{
+  /* ---------- Jiaobei（SVG 半月筊杯 + 落地金光） ---------- */
+  .blocks{display:flex;gap:32px;justify-content:center;align-items:flex-end;
+    margin:20px 0 10px;perspective:720px;position:relative;min-height:120px;}
+  .jwrap{display:flex;flex-direction:column;align-items:center;gap:7px;}
+  .jiao{width:120px;transform-style:preserve-3d;will-change:transform;}
+  .jiao .jsvg{width:100%;height:auto;display:block;filter:drop-shadow(0 7px 9px rgba(0,0,0,.5));}
+  .jcap{font-size:15px;color:var(--gold-b);letter-spacing:4px;font-weight:700;}
+  @keyframes jtumble{
     0%{transform:translateY(0) rotateX(0);}
-    20%{transform:translateY(-46px) rotateX(220deg);}
-    45%{transform:translateY(6px) rotateX(520deg);}
-    62%{transform:translateY(-22px) rotateX(760deg);}
-    80%{transform:translateY(4px) rotateX(1000deg);}
+    22%{transform:translateY(-54px) rotateX(250deg);}
+    48%{transform:translateY(6px) rotateX(560deg);}
+    66%{transform:translateY(-22px) rotateX(830deg);}
+    82%{transform:translateY(4px) rotateX(1050deg);}
     100%{transform:translateY(0) rotateX(1080deg);}
   }
-  .blk.tumbling{animation:tumble .85s cubic-bezier(.3,.7,.3,1);}
-  .blk.tumbling.b2{animation-duration:.95s;}
+  .jiao.tumbling{animation:jtumble var(--motion-ritual) cubic-bezier(.3,.7,.3,1);}
+  .jiao.tumbling.b2{animation-duration:.95s;}
+  .jiao.landed{animation:settle .34s var(--ease-settle);}
+  .jland{position:absolute;bottom:22px;left:50%;width:110px;height:110px;border-radius:50%;
+    border:3px solid var(--glow-gold);transform:translate(-50%,-50%) scale(.25);opacity:0;pointer-events:none;}
+  .jland.go{animation:landRipple .6s ease-out;}
 
   .verdict{text-align:center;margin:8px 0 4px;min-height:78px;}
   .verdict .name{font-size:46px;font-weight:700;letter-spacing:8px;padding-left:8px;
@@ -352,8 +365,8 @@
 
   :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;}
   @media(prefers-reduced-motion:reduce){
-    .blk.tumbling{animation-duration:.15s;}
-    *{animation-duration:.15s !important;}
+    .glow-breathe{animation:none;}
+    *{animation-duration:.15s !important;animation-iteration-count:1 !important;}
   }
 </style>
 </head>
@@ -419,8 +432,9 @@
     <div class="view" id="v-jiao">
       <textarea class="ask" id="jAsk" rows="1" placeholder="向神明請示之事（可留空）…"></textarea>
       <div class="blocks">
-        <div class="blk red" id="blk1"><span class="face">凸</span></div>
-        <div class="blk brown" id="blk2"><span class="face">平</span></div>
+        <div class="jwrap"><div class="jiao" id="blk1"></div><div class="jcap" id="cap1">凸</div></div>
+        <div class="jwrap"><div class="jiao" id="blk2"></div><div class="jcap" id="cap2">平</div></div>
+        <span class="jland" id="jLand" aria-hidden="true"></span>
       </div>
       <div class="verdict" id="jVerdict"><div class="empty">凝神請示後擲筊</div></div>
       <button class="btn red serif" id="jBtn">擲 筊</button>
@@ -671,6 +685,40 @@ function logEntry(type, summary, q){
   const arr=LS.get("xj_journal",[]);
   arr.push({t:Date.now(), type, q:q||"", s:summary});
   LS.set("xj_journal", arr.length>300 ? arr.slice(-300) : arr);
+}
+// kernel：motion helper——加 class（或等現有動畫），animationend 與 timeout 賽跑防卡死
+function anim(el, cls, fallbackMs=1000){
+  return new Promise(res=>{
+    if(!el) return res();
+    let done=false;
+    const fin=()=>{ if(done)return; done=true; el.removeEventListener("animationend",fin); res(); };
+    el.addEventListener("animationend",fin);
+    if(cls) el.classList.add(cls);
+    setTimeout(fin, fallbackMs);
+  });
+}
+// 重播一次性動畫（先移除 class、強制 reflow、再加回）
+function replay(el, cls){ if(!el)return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+const reduceMotion = ()=>{ try{ return matchMedia("(prefers-reduced-motion:reduce)").matches; }catch(e){ return false; } };
+
+// SVG 半月筊杯（朱紅 lacquer / 深木；金邊；同源、可縮放；uid 讓漸層 id 不衝突）
+function jiaoSVG(face, uid){
+  const R = face!=="wood";
+  const gid="jg"+uid;
+  const body="M16,30 Q16,23 23,23 L107,23 Q114,23 114,30 Q114,61 65,61 Q16,61 16,30 Z";
+  const def = R
+    ? `<radialGradient id="${gid}" cx="40%" cy="28%" r="88%"><stop offset="0%" stop-color="#ef6a54"/><stop offset="52%" stop-color="#c0392b"/><stop offset="100%" stop-color="#7d1e13"/></radialGradient>`
+    : `<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9c8a5c"/><stop offset="100%" stop-color="#50421f"/></linearGradient>`;
+  const grain = R ? "" :
+    `<path d="M28,32 Q65,28 102,32" stroke="rgba(55,40,15,.42)" stroke-width="1.2" fill="none"/>
+     <path d="M26,40 Q65,37 104,40" stroke="rgba(55,40,15,.36)" stroke-width="1.2" fill="none"/>
+     <path d="M30,48 Q65,46 100,48" stroke="rgba(55,40,15,.3)" stroke-width="1.2" fill="none"/>`;
+  const gloss = R
+    ? `<ellipse cx="47" cy="33" rx="27" ry="8" fill="rgba(255,255,255,.32)"/>`
+    : `<ellipse cx="50" cy="32" rx="24" ry="5.5" fill="rgba(255,255,255,.1)"/>`;
+  return `<svg class="jsvg" viewBox="0 0 130 76" xmlns="http://www.w3.org/2000/svg"><defs>${def}</defs>`
+    +`<path d="${body}" fill="url(#${gid})" stroke="#e7cd82" stroke-width="2.6"/>`
+    +grain+gloss+`</svg>`;
 }
 
 // 儲存 / 分享 / 提示 / 願望列
@@ -1019,32 +1067,37 @@ function verdictOf(a,b){
   if(a==="平") return {k:"笑", name:"笑筊", desc:"兩平 · 神明未明示，宜再請示或另問"};
   return {k:"陰", name:"陰筊", desc:"兩凸 · 神明不允，宜緩行或另尋他法"};
 }
-function tossJiao(){
+async function tossJiao(){
   if(tossing) return; tossing=true; buzz(25);
   $("#jBtn").disabled=true;
-  blk1.classList.add("tumbling"); blk2.classList.add("tumbling","b2");
-  const a=throwBlock(), b=throwBlock();
-  setTimeout(()=>{
-    blk1.querySelector(".face").textContent=a;
-    blk2.querySelector(".face").textContent=b;
-    blk1.classList.remove("tumbling"); blk2.classList.remove("tumbling","b2");
-    const v=verdictOf(a,b);
-    if(v.k==="聖"){ tally.sheng++; streak++; } else { streak=0; if(v.k==="笑")tally.xiao++; else tally.yin++; }
-    renderTally();
-    let extra="";
-    if(optStreak){
-      if(v.k==="聖" && streak>=3){ extra=" ✦ 連三聖筊，神明明確應允"; streak=0; }
-      else if(v.k==="聖"){ extra=` ✦ 已連 ${streak} 聖，續擲求連三`; }
-    }
-    const w=$("#jAsk").value.trim();
-    const wline=w?`<div style="font-size:13px;color:var(--gold-d);letter-spacing:1px;margin-bottom:6px;">所問 · ${escapeHTML(w)}</div>`:"";
-    $("#jVerdict").className="verdict v-"+v.k;
-    $("#jVerdict").innerHTML=`${wline}<div class="name serif">${v.name}</div><div class="desc">${v.desc}${extra}</div>`;
-    buzz(v.k==="聖"?[15,50,15,50,15]:30);
-    tossing=false; $("#jBtn").disabled=false;
-    saveJ();
-    logEntry("jiao", v.name, w);
-  }, 900);
+  const a=throwBlock(), b=throwBlock();       // 平→紅面、凸→木面
+  blk1.classList.remove("landed"); blk2.classList.remove("landed");
+  blk2.classList.add("b2");
+  replay(blk1,"tumbling"); replay(blk2,"tumbling");
+  await anim(blk2, null, 1050);               // 等較慢的那顆落定
+  blk1.innerHTML=jiaoSVG(a==="平"?"red":"wood","1");
+  blk2.innerHTML=jiaoSVG(b==="平"?"red":"wood","2");
+  $("#cap1").textContent=a; $("#cap2").textContent=b;
+  blk1.classList.remove("tumbling"); blk2.classList.remove("tumbling","b2");
+  blk1.classList.add("landed"); blk2.classList.add("landed");
+  replay($("#jLand"),"go");                    // 落地金光
+  const v=verdictOf(a,b);
+  if(v.k==="聖"){ tally.sheng++; streak++; } else { streak=0; if(v.k==="笑")tally.xiao++; else tally.yin++; }
+  renderTally();
+  let extra="";
+  if(optStreak){
+    if(v.k==="聖" && streak>=3){ extra=" ✦ 連三聖筊，神明明確應允"; streak=0; }
+    else if(v.k==="聖"){ extra=` ✦ 已連 ${streak} 聖，續擲求連三`; }
+  }
+  const w=$("#jAsk").value.trim();
+  const wline=w?`<div style="font-size:13px;color:var(--gold-d);letter-spacing:1px;margin-bottom:6px;">所問 · ${escapeHTML(w)}</div>`:"";
+  $("#jVerdict").className="verdict v-"+v.k;
+  $("#jVerdict").innerHTML=`${wline}<div class="name serif">${v.name}</div><div class="desc">${v.desc}${extra}</div>`;
+  replay($("#jVerdict .name"),"animpop");
+  buzz(v.k==="聖"?[15,50,15,50,15]:30);
+  tossing=false; $("#jBtn").disabled=false;
+  saveJ();
+  logEntry("jiao", v.name, w);
 }
 function saveJ(){ LS.set("xj_jiao",{tally,streak,optStreak,optBless}); }
 function renderTally(){
@@ -1058,8 +1111,9 @@ $("#jReset").addEventListener("click",()=>{
   tally={sheng:0,xiao:0,yin:0}; streak=0; renderTally();
   $("#jVerdict").className="verdict";
   $("#jVerdict").innerHTML='<div class="empty">凝神請示後擲筊</div>';
-  blk1.querySelector(".face").textContent="凸";
-  blk2.querySelector(".face").textContent="平";
+  blk1.classList.remove("landed"); blk2.classList.remove("landed");
+  blk1.innerHTML=jiaoSVG("wood","1"); blk2.innerHTML=jiaoSVG("red","2");
+  $("#cap1").textContent="凸"; $("#cap2").textContent="平";
   buzz(20); saveJ();
 });
 
@@ -1071,6 +1125,7 @@ $("#swStreak").addEventListener("click",function(){ optStreak=!optStreak; this.c
 $("#swBless").addEventListener("click",function(){ optBless=!optBless; this.classList.toggle("on",optBless); saveJ(); });
 // 還原上次的擲筊統計與設定
 (function initJiao(){
+  blk1.innerHTML=jiaoSVG("wood","1"); blk2.innerHTML=jiaoSVG("red","2");  // 初始筊杯面
   const s=LS.get("xj_jiao");
   if(s){ tally=s.tally||tally; streak=s.streak||0; optStreak=!!s.optStreak; optBless=!!s.optBless;
     $("#swStreak").classList.toggle("on",optStreak); $("#swBless").classList.toggle("on",optBless); renderTally(); }

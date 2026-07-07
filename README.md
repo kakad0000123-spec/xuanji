@@ -8,6 +8,7 @@
 - `tarot-data.js` — 塔羅 78 張繁中牌義（正/逆位）。
 - `zodiac-data.js` — 星座資料：12 星座/元素配對規則/每日運勢文案池/水逆日期表（2026–2027，已查證：Old Farmer's Almanac、Britannica、Astro-Seek 三源一致）。運勢＝seedRnd(日期^星座) 套版組合，同日同座固定；月相用 lunar.js `getYueXiang`＋農曆日近似。
 - `cards/` — 塔羅牌面圖（Rider-Waite-Smith 1909，公有領域；圖檔取自 [metabismuth/tarot-json](https://github.com/metabismuth/tarot-json)，350×600）。
+- `docs/VISUAL_DIRECTION.md` — 視覺與動畫 SSOT：紅金廟宇感、motion layer 判準、AI 參考圖路徑、否決項。
 - 本機預覽：`python3 -m http.server 8848` 後開 http://localhost:8848
 
 ## 塔羅設計決策（why）

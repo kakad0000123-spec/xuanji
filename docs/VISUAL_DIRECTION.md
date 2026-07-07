@@ -1,0 +1,102 @@
+# 玄機籤閣 — 視覺與動畫方向
+
+> 2026-07-07 定稿。本文記視覺語言、動畫判準、AI 參考圖路徑與否決項。
+> 架構排程仍以 `docs/PLAN.md` 為準；本文是視覺 SSOT。改結論時標 `superseded`，不要刪舊判斷。
+
+## 1. 視覺定位
+
+玄機籤閣的視覺不是一般星座 app，也不是寫實廟宇照片。
+
+判準：
+- **台灣求問儀式感**：紅金、紙籤、筊杯、通書、塔羅牌背都要像同一個小型儀式工具。
+- **深色 app 面板**：背景以黑棕、深紅、古金為主，靠邊框、紙張、光暈形成層次。
+- **手機優先**：元件要在 360px 寬仍清楚，細節不可只在大圖才看得出來。
+- **輕量實作**：優先 CSS/SVG；PNG/WebP 只用於既有塔羅牌面、少量材質或最終採用的牌背圖。
+
+## 2. 動畫原則
+
+每個 view 只有一個主動畫焦點。靜態狀態保持沉穩，使用者互動時才有儀式感。
+
+允許：
+- 只動 `transform`、`opacity`、必要時 `filter`。
+- 抽取 / 擲出 / 翻牌 / 結果出現時跑一次短動畫。
+- active view 的主物件可有極淡、低頻的呼吸光，但不能持續搶焦點。
+- 必須尊重 `prefers-reduced-motion`，降級成短淡入或無位移。
+
+不允許：
+- Header 燈籠常態搖晃。
+- 背景粒子、煙霧、星星常態飄動。
+- GIF / 影片承載互動動畫。
+- 整張 AI 背景圖塞進互動區。
+- 農民曆宜忌、沖煞等資訊欄位跳動。
+
+## 3. 各功能動畫焦點
+
+| View | 主動畫焦點 | 建議實作 |
+|---|---|---|
+| 求籤 `#qian` | 籤號 reel | 保留現有滾動；停格瞬間加短金光與輕微 settle。 |
+| 抽卦 `#gua` | 卦象生成 | 保留 reel；終局卦象可加線條依序亮起。 |
+| 擲筊 `#jiao` | 筊杯拋落 | CSS/SVG 筊杯；拋起、翻面、落地彈跳、金色 land ripple、結果淡入。 |
+| 塔羅 `#tarot` | 翻牌 | 牌背與牌面必須在同一容器做 3D flip；不能再用 `outerHTML` 直接替換元素。 |
+| 星座今日 `#astro` | 結果卡浮現 | 星座 chip 只做點擊回饋；結果卡淡入即可。 |
+| 星座配對 `#astropair` | 分數揭示 | count-up + scorebar fill，按「合參」後跑一次。 |
+| 月相水逆 `#astrosky` | 月相光暈 | 月亮圖示可低頻微 glow；內容只淡入。 |
+| 今日氣場 `#aura` | 日牌 / 氣場卡 | 日牌浮現或小翻入；chip stagger fade。 |
+| 農民曆 `#almanac` | 日期卡換頁 | 日期切換淡入；資訊保持穩定可讀。 |
+
+## 4. 擲筊視覺決策
+
+方向：第 2 張參考圖作主方向，第 3 張借光影。
+
+實作策略：
+- 筊杯本體用 CSS/SVG 重做，不直接把參考圖裁進頁面。
+- 外形偏 2.5D UI 元件：清楚、乾淨、可縮放。
+- 紅面用朱紅 lacquer gradient；平面用深木色，木紋只做少量線條。
+- 落地瞬間用一圈金色 ripple / glow，不做持續發光。
+- 結果文字只做淡入與小幅 pop，不做一直閃爍。
+
+本地 AI 參考圖：
+- 1 號，半寫實材質參考：`/Users/po/.codex/generated_images/019f3a30-1e6b-7453-992f-cd8822ace56e/ig_09d1457599ef18bf016a4c59d7ddd48191a5ae52ac39306133.png`
+- 2 號，主方向，2.5D UI 元件：`/Users/po/.codex/generated_images/019f3a30-1e6b-7453-992f-cd8822ace56e/ig_09d1457599ef18bf016a4c5a011c1881919872039c4d95be1c.png`
+- 3 號，光影參考：`/Users/po/.codex/generated_images/019f3a30-1e6b-7453-992f-cd8822ace56e/ig_09d1457599ef18bf016a4c5a3589b08191952256ec65d5dc26.png`
+
+注意：以上圖片目前只在本機 `.codex/generated_images`，尚未納入 repo。若要版本控管，另建 `docs/reference-images/` 或 `assets/reference-images/`，再壓縮後提交。
+
+## 5. 塔羅牌背決策
+
+翻牌動畫需要「牌背 -> 牌面同容器 3D 翻轉」。
+
+判準：
+- 牌面沿用 `cards/*.jpg`。
+- 牌背優先用 CSS/SVG 重畫，確保小尺寸清楚且檔案輕。
+- AI 生成牌背只作視覺參考；若最終採用為 PNG/WebP，必須先壓縮並確認手機尺寸不糊。
+- 重寫抽牌流程時，不能再用 `outerHTML` 換牌；要改成 `.flip-card` 容器內含 `.front` / `.back`。
+
+本地 AI 參考圖：
+- 塔羅牌背參考：`/Users/po/.codex/generated_images/019f3a30-1e6b-7453-992f-cd8822ace56e/ig_000590f693253f8d016a4c6b64bb68819187add08bc7eb9336.png`
+
+## 6. Motion Layer 要求
+
+v1.1e 實作動畫時，先補共用 motion layer，不要在各功能散寫一次性動畫。
+
+最小內容：
+- CSS tokens：時間、easing、glow 強度。
+- 共用 keyframes：`pop`、`pulseGlow`、`flipCard`、`landRipple`、`settle`。
+- JS helper：`anim(el, className, fallbackMs)`，用 `animationend` 與 timeout 賽跑，避免動畫中斷後卡狀態。
+- 降級策略：`prefers-reduced-motion` 下只保留短淡入。
+
+效能規矩：
+- 動畫目標元素數量少，避免整頁 repaint。
+- 不動畫 `top/left/width/height`。
+- 不用第三方動畫 library。
+
+## 7. 墓碑
+
+| 否決 | 為什麼 |
+|---|---|
+| 直接找免費擲筊照片 | 光線、背景、材質不一致；還要逐一查授權，放進 app 會突兀。 |
+| 整張 AI 圖當擲筊互動背景 | 檔案大、縮放不可控、容易蓋過資訊。 |
+| GIF / 影片做擲筊或翻牌 | 不可控、重、難配合結果狀態。 |
+| 全頁常態動畫 | 求問工具需要沉穩，所有東西都動會變亂。 |
+| 農民曆做重動畫 | 它是資訊查詢頁，閱讀穩定性優先。 |
+| 塔羅翻牌繼續用 `outerHTML` 換元素 | 與 3D 翻牌互斥；必須重寫成同容器 front/back。 |
