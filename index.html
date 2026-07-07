@@ -46,16 +46,23 @@
   .chip small{color:var(--gold-d);}
 
   /* ---------- Tabs ---------- */
-  .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:11px 0;}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:11px 0 9px;}
   .tab{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
-    border-radius:11px;padding:9px 1px 8px;text-align:center;cursor:pointer;color:var(--gold);
-    transition:transform .12s, box-shadow .2s;}
+    border-radius:12px;padding:10px 2px 9px;text-align:center;cursor:pointer;color:var(--gold);
+    transition:transform .12s, box-shadow .2s;font-family:inherit;}
   .tab:active{transform:scale(.97);}
-  .tab .ic{font-size:19px;display:block;margin-bottom:3px;filter:grayscale(.15);}
-  .tab .tx{font-size:12px;letter-spacing:0;white-space:nowrap;}
+  .tab .ic{font-size:21px;display:block;margin-bottom:4px;filter:grayscale(.15);}
+  .tab .tx{font-size:14px;letter-spacing:1px;white-space:nowrap;}
   .tab.on{background:linear-gradient(180deg,#f2da8e,#cba455);color:#3a2c12;border-color:#e7cd82;
     box-shadow:0 0 18px rgba(215,181,102,.4);font-weight:700;}
   .tab.on .ic{filter:none;}
+  /* 子頁膠囊列（組內切換；單一子頁的組自動隱藏） */
+  .subnav{display:flex;gap:7px;margin:0 0 12px;}
+  .subnav.hide{display:none;}
+  .subbtn{flex:1;background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--gold-d);
+    border-radius:20px;padding:9px 4px;font-size:14px;letter-spacing:2px;cursor:pointer;font-family:inherit;}
+  .subbtn:active{transform:scale(.97);}
+  .subbtn.on{background:linear-gradient(180deg,#f2da8e,#cba455);color:#3a2c12;border-color:#e7cd82;font-weight:700;}
 
   /* ---------- Panel ---------- */
   .panel{background:linear-gradient(180deg,var(--panel),#160f0a);border:1px solid var(--line);
@@ -301,14 +308,9 @@
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <div class="tab on" data-v="qian"><span class="ic">🎍</span><span class="tx serif">求籤</span></div>
-    <div class="tab" data-v="gua"><span class="ic">☯️</span><span class="tx serif">抽卦</span></div>
-    <div class="tab" data-v="jiao"><span class="ic">🥮</span><span class="tx serif">擲筊</span></div>
-    <div class="tab" data-v="tarot"><span class="ic">🔮</span><span class="tx serif">塔羅</span></div>
-    <div class="tab" data-v="almanac"><span class="ic">📜</span><span class="tx serif">農民曆</span></div>
-  </div>
+  <!-- Tabs（註冊表驅動，見 NAV；加功能=加一筆設定） -->
+  <div class="tabs" id="mainTabs"></div>
+  <div class="subnav hide" id="subNav"></div>
 
   <div class="panel">
 
@@ -637,16 +639,52 @@ function hexHTML(up,low){
 })();
 
 /* ============================================================
-   分頁切換
+   導覽（註冊表 + hash 路由）
+   加新功能：NAV 加一筆（或在既有組 subs 加一項）+ 對應 <div class="view" id="v-xxx">，
+   其餘（渲染/路由/深連結）自動生效。onEnter 供懶載入。
    ============================================================ */
-document.querySelectorAll(".tab").forEach(t=>{
-  t.addEventListener("click",()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
-    document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
-    t.classList.add("on");
-    $("#v-"+t.dataset.v).classList.add("on");
-    if(t.dataset.v==="almanac" && !almRendered) showAlmanac(new Date());
-  });
+const NAV=[
+  {id:"ask",   ic:"🏮", tx:"求問", subs:[
+    {v:"qian", tx:"求籤"}, {v:"gua", tx:"抽卦"}, {v:"jiao", tx:"擲筊"} ]},
+  {id:"tarot", ic:"🔮", tx:"塔羅", subs:[ {v:"tarot", tx:"塔羅"} ]},
+  {id:"alm",   ic:"📜", tx:"曆法", subs:[
+    {v:"almanac", tx:"農民曆", onEnter:()=>{ if(!almRendered) showAlmanac(new Date()); }} ]},
+];
+const lastSub={};              // 記住每組最後停留的子頁
+function findNav(v){ for(const g of NAV){ const s=g.subs.find(x=>x.v===v); if(s) return {g,s}; } return null; }
+function renderNav(cur){
+  const {g}=findNav(cur);
+  $("#mainTabs").innerHTML = NAV.map(x=>
+    `<button class="tab${x.id===g.id?' on':''}" data-g="${x.id}" aria-selected="${x.id===g.id}">
+       <span class="ic">${x.ic}</span><span class="tx serif">${x.tx}</span></button>`).join("");
+  const sn=$("#subNav");
+  if(g.subs.length>1){
+    sn.className="subnav";
+    sn.innerHTML = g.subs.map(s=>
+      `<button class="subbtn serif${s.v===cur?' on':''}" data-v="${s.v}" aria-selected="${s.v===cur}">${s.tx}</button>`).join("");
+  } else { sn.className="subnav hide"; sn.innerHTML=""; }
+}
+function showView(v, push=true){
+  const hit=findNav(v); if(!hit) return;
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  $("#v-"+v).classList.add("on");
+  lastSub[hit.g.id]=v;
+  renderNav(v);
+  if(hit.s.onEnter) hit.s.onEnter();
+  if(push && location.hash!=="#"+v) history.replaceState(null,"","#"+v);
+}
+$("#mainTabs").addEventListener("click",e=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  const g=NAV.find(x=>x.id===b.dataset.g);
+  showView(lastSub[g.id]||g.subs[0].v);
+});
+$("#subNav").addEventListener("click",e=>{
+  const b=e.target.closest(".subbtn"); if(!b) return;
+  showView(b.dataset.v);
+});
+window.addEventListener("hashchange",()=>{
+  const v=location.hash.slice(1);
+  if(findNav(v)) showView(v,false);
 });
 
 // textarea 自動長高
@@ -1041,6 +1079,14 @@ aDate.addEventListener("change",()=>{ if(aDate.value) renderAlmanac(parseI(aDate
 $("#aPrev").addEventListener("click",()=>{ const d=parseI(aDate.value); d.setDate(d.getDate()-1); showAlmanac(d); });
 $("#aNext").addEventListener("click",()=>{ const d=parseI(aDate.value); d.setDate(d.getDate()+1); showAlmanac(d); });
 $("#aToday").addEventListener("click",()=>showAlmanac(new Date()));
+
+/* ============================================================
+   初始路由（置於檔尾：所有 view 的狀態與函式都已就緒）
+   ============================================================ */
+(function initRoute(){
+  const v=location.hash.slice(1);
+  showView(findNav(v)?v:"qian", false);
+})();
 </script>
 </body>
 </html>
