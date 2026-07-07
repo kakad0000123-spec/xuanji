@@ -861,7 +861,7 @@ function drawShareCard(cfg){
         wrapText(x,cfg.note,W-220).forEach(l=>{ x.fillText(l,110,y); y+=52; }); x.textAlign="center"; }
       x.fillStyle="#8a7340"; x.font=`26px ${CARD_SERIF}`;
       x.textAlign="left"; x.fillText(cfg.date||"", 74, H-62);
-      x.textAlign="right"; x.fillText("xuanji-kappa.vercel.app", W-74, H-62);
+      x.textAlign="right"; x.fillText("xuanwen.vercel.app", W-74, H-62);
       c.toBlob(b=>resolve(b),"image/png");
     };
     if(cfg.cardImg){
