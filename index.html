@@ -1034,6 +1034,108 @@ function drawAuraPanel(x,P,cfg,im,y,bottom){
   drawAuraCell(x,"開運小語",au.tip||"—",bx+cellW+cellGap,y,cellW,cellH);
   return Math.min(y+cellH,bottom);
 }
+// 塔羅三列（合參/三張牌共用）：牌位 pill + 牌名·正逆 + 關鍵詞 + 牌義（行數可調）
+function drawTarotTriRows(x,P,list,y,opt){
+  const {rowH=82, meaningRows=1, meaningFs=19}=opt||{};
+  const bx=P.x+58, bw=P.w-116;
+  list.slice(0,3).forEach((d,i)=>{
+    const yy=y+i*(rowH+9);
+    x.fillStyle="rgba(255,248,232,.28)"; rrect(x,bx,yy,bw,rowH,9); x.fill();
+    x.strokeStyle="rgba(139,94,42,.18)"; x.lineWidth=1; rrect(x,bx,yy,bw,rowH,9); x.stroke();
+    const pillW=92;
+    x.fillStyle=i===1?"rgba(143,37,25,.12)":"rgba(63,122,58,.11)"; rrect(x,bx+16,yy+14,pillW,42,18); x.fill();
+    x.fillStyle=i===1?"#8f2519":"#3f7a3a"; setFont(x,20,CARD_BODY,700); x.textAlign="center";
+    x.fillText(d.pos||["現在","阻礙","未來"][i]||"牌位",bx+16+pillW/2,yy+42);
+    const tx=bx+130, rw=bw-154;
+    x.textAlign="left"; x.fillStyle="#4b2e1a";
+    const title=`${d.card||"—"} · ${d.orientation||"正位"}`;
+    setFont(x,24,CARD_SERIF,700); fitFont(x,title,rw,24,18,CARD_SERIF,700); x.fillText(title,tx,yy+27);
+    x.fillStyle="#6c5030"; setFont(x,18,CARD_BODY,500);
+    if(d.keywords) x.fillText(limitedRows(x,d.keywords,rw,1)[0],tx,yy+51);
+    x.fillStyle="#4b351e"; setFont(x,meaningFs,CARD_BODY,500);
+    limitedRows(x,d.meaning||"",rw,meaningRows).forEach((row,r)=>x.fillText(row,tx,yy+74+r*(meaningFs+9)));
+  });
+  x.textAlign="center";
+  return y+list.slice(0,3).length*(rowH+9)+9;
+}
+function drawMixedPanel(x,P,cfg,y,bottom){
+  const mix=cfg.mix||{}, tarot=mix.tarot||[], q=mix.qian||{};
+  const bx=P.x+58, bw=P.w-116;
+  sectionDivider(x,P.x+P.w/2,y+4,"塔羅三象",P.w-300); y+=32;
+  y=drawTarotTriRows(x,P,tarot,y)+9;
+
+  sectionDivider(x,P.x+P.w/2,y+4,"籤 · 總結",P.w-300); y+=30;
+  const avail=Math.max(150,bottom-y), qh=Math.min(238,avail);
+  x.fillStyle="rgba(255,248,232,.34)"; rrect(x,bx,y,bw,qh,9); x.fill();
+  x.strokeStyle="rgba(139,94,42,.32)"; x.lineWidth=1.2; rrect(x,bx,y,bw,qh,9); x.stroke();
+  const head=`第 ${q.no||"—"} 籤 · ${q.luck||cfg.badge||""}`;
+  x.textAlign="center"; x.fillStyle="#7a1e14"; setFont(x,28,CARD_SERIF,700);
+  fitFont(x,head,bw-52,28,21,CARD_SERIF,700); x.fillText(head,P.x+P.w/2,y+42);
+  x.fillStyle="#6c5030"; setFont(x,22,CARD_SERIF,600);
+  limitedRows(x,(q.poem||[]).join("　"),bw-68,2).forEach((row,i)=>x.fillText(row,P.x+P.w/2,y+78+i*31));
+  x.textAlign="left"; x.fillStyle="#4b351e"; setFont(x,23,CARD_BODY,500);
+  const jieTop=y+142, maxJie=Math.max(2,Math.floor((y+qh-jieTop-20)/32));
+  limitedRows(x,q.jie||"",bw-62,maxJie).forEach((row,i)=>x.fillText(row,bx+31,jieTop+i*32));
+  x.textAlign="center"; return y+qh;
+}
+// 抽卦專用面板：六爻卦象圖＋上下卦＋卦辭＋釋義（feature:"gua"）
+function drawGuaPanel(x,P,cfg,y,bottom){
+  const g=cfg.gua||{}, bx=P.x+58, bw=P.w-116, cx=P.x+P.w/2;
+  sectionDivider(x,cx,y+4,"卦 象",P.w-300); y+=44;
+  // 六爻：上爻在上、初爻在下（TRI[low] 為下三爻）
+  const seq=[...(TRI[g.low]||[0,0,0]),...(TRI[g.up]||[1,1,1])];
+  const yaoW=200, yaoH=17, gap=13;
+  for(let i=5;i>=0;i--){
+    const yy=y+(5-i)*(yaoH+gap), lx=cx-yaoW/2;
+    x.fillStyle="#5a3c16";
+    if(seq[i]){ rrect(x,lx,yy,yaoW,yaoH,3); x.fill(); }
+    else{ const seg=(yaoW-30)/2; rrect(x,lx,yy,seg,yaoH,3); x.fill(); rrect(x,lx+seg+30,yy,seg,yaoH,3); x.fill(); }
+  }
+  y+=6*(yaoH+gap)+16;
+  x.textAlign="center"; x.fillStyle="#6c5030"; setFont(x,22,CARD_BODY,500);
+  x.fillText(`上卦 ${g.up||"—"}（${g.upN||""}）　下卦 ${g.low||"—"}（${g.lowN||""}）`,cx,y); y+=46;
+  // 卦辭盒
+  sectionDivider(x,cx,y,"卦 辭",P.w-300); y+=28;
+  setFont(x,25,CARD_SERIF,600);
+  const ciRows=limitedRows(x,g.ci||"",bw-64,2), ciH=ciRows.length*36+30;
+  x.fillStyle="rgba(255,248,232,.34)"; rrect(x,bx,y,bw,ciH,9); x.fill();
+  x.strokeStyle="rgba(139,94,42,.32)"; x.lineWidth=1.2; rrect(x,bx,y,bw,ciH,9); x.stroke();
+  x.fillStyle="#5a3418"; ciRows.forEach((row,i)=>x.fillText(row,cx,y+38+i*36));
+  y+=ciH+34;
+  // 釋義盒
+  sectionDivider(x,cx,y,"釋 義",P.w-300); y+=28;
+  setFont(x,24,CARD_BODY,500);
+  const maxJ=Math.max(2,Math.floor((bottom-y-46)/34));
+  const jRows=limitedRows(x,g.jie||"",bw-60,maxJ), jH=jRows.length*34+30;
+  x.fillStyle="rgba(255,248,232,.34)"; rrect(x,bx,y,bw,jH,9); x.fill();
+  x.strokeStyle="rgba(139,94,42,.32)"; x.lineWidth=1.2; rrect(x,bx,y,bw,jH,9); x.stroke();
+  x.textAlign="left"; x.fillStyle="#4b351e"; jRows.forEach((row,i)=>x.fillText(row,bx+30,y+36+i*34));
+  x.textAlign="center"; return y+jH;
+}
+// 今日運勢專用面板：各項星等＋各項文案＋幸運格（feature:"fortune"）
+function drawFortunePanel(x,P,cfg,y,bottom){
+  const f=cfg.fortune||{}, rows=f.rows||[], bx=P.x+58, bw=P.w-116, cx=P.x+P.w/2;
+  sectionDivider(x,cx,y+4,"今日運勢",P.w-300); y+=34;
+  rows.slice(0,4).forEach((r,i)=>{
+    const rowH=78, yy=y+i*(rowH+9), pillW=88;
+    x.fillStyle="rgba(255,248,232,.30)"; rrect(x,bx,yy,bw,rowH,9); x.fill();
+    x.strokeStyle="rgba(139,94,42,.18)"; x.lineWidth=1; rrect(x,bx,yy,bw,rowH,9); x.stroke();
+    x.fillStyle="rgba(139,94,42,.12)"; rrect(x,bx+16,yy+18,pillW,42,18); x.fill();
+    x.fillStyle="#7a1e14"; setFont(x,21,CARD_SERIF,700); x.textAlign="center";
+    x.fillText(r.label||"—",bx+16+pillW/2,yy+46);
+    const tx=bx+126, rw=bw-150;
+    x.textAlign="left"; x.fillStyle="#b3261a"; setFont(x,23,CARD_SERIF,700);
+    x.fillText("★".repeat(r.stars||0)+"☆".repeat(Math.max(0,5-(r.stars||0))),tx,yy+32);
+    x.fillStyle="#4b351e"; setFont(x,20,CARD_BODY,500);
+    x.fillText(limitedRows(x,r.text||"",rw,1)[0]||"",tx,yy+62);
+  });
+  y+=rows.slice(0,4).length*87+16;
+  const cellGap=10, cellW=(bw-cellGap*2)/3, cellH=58;
+  drawAuraCell(x,"幸運色",f.color||"—",bx,y,cellW,cellH);
+  drawAuraCell(x,"幸運數字",String(f.num??"—"),bx+cellW+cellGap,y,cellW,cellH);
+  drawAuraCell(x,"開運小語",f.tip||"—",bx+(cellW+cellGap)*2,y,cellW,cellH);
+  x.textAlign="center"; return y+cellH;
+}
 
 async function drawShareCard(cfg){
   const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;
@@ -1060,6 +1162,27 @@ async function drawShareCard(cfg){
   y+=6;
   if(cfg.feature==="aura"){
     drawAuraPanel(x,P,cfg,im,y,contentBottom);
+    drawFooter(x,W,H,cfg.when||new Date());
+    return await new Promise(res=>c.toBlob(res,"image/png"));
+  }
+  if(cfg.feature==="mixed"){
+    drawMixedPanel(x,P,cfg,y,contentBottom);
+    drawFooter(x,W,H,cfg.when||new Date());
+    return await new Promise(res=>c.toBlob(res,"image/png"));
+  }
+  if(cfg.feature==="tarot3"){
+    sectionDivider(x,P.x+P.w/2,y+4,"塔羅三象",P.w-300); y+=32;
+    drawTarotTriRows(x,P,cfg.tarot||[],y,{rowH:158,meaningRows:3,meaningFs:21});
+    drawFooter(x,W,H,cfg.when||new Date());
+    return await new Promise(res=>c.toBlob(res,"image/png"));
+  }
+  if(cfg.feature==="gua"){
+    drawGuaPanel(x,P,cfg,y,contentBottom);
+    drawFooter(x,W,H,cfg.when||new Date());
+    return await new Promise(res=>c.toBlob(res,"image/png"));
+  }
+  if(cfg.feature==="fortune"){
+    drawFortunePanel(x,P,cfg,y,contentBottom);
     drawFooter(x,W,H,cfg.when||new Date());
     return await new Promise(res=>c.toBlob(res,"image/png"));
   }
@@ -1422,8 +1545,8 @@ function showGua(i){
    </div>`;
   $("#gShare").addEventListener("click",()=>{
     const w=$("#gAsk").value.trim();
-    shareCard({kind:`易經抽卦 · 第 ${n} 卦`, badge:`${name}　${xiang}`, badgeColor:"#8a5a1a",
-      wish:w, note:`卦辭：${ci}\n\n${jie}`, noteLabel:"卦 象", when:new Date(),
+    shareCard({feature:"gua", kind:`易經抽卦 · 第 ${n} 卦`, badge:`${name}　${xiang}`, badgeColor:"#8a5a1a",
+      wish:w, gua:{name, up, low, upN:NATURE[up], lowN:NATURE[low], ci, jie}, when:new Date(),
       shareText:`【玄問】${name}卦（${xiang} · 第${n}卦）\n${w?"所問："+w+"\n":""}卦辭：${ci}\n\n${jie}`});
   });
 }
@@ -1673,11 +1796,15 @@ function showMixed(draw, qi){
      <div class="acts"><button class="act share" id="tShare">分享 ⤴</button></div>
    </div></div>`;
   $("#tShare").addEventListener("click",()=>{
-    const body=draw.map(d=>`${d.pos}：${d.card.zh}（${d.rev?'逆位':'正位'}）`).join("\n");
-    shareCard({kind:"東西合參", wish:w, badge:luck, badgeColor:LUCK_COLOR[luck],
-      lines:draw.map(d=>`${d.pos} · ${d.card.zh}（${d.rev?"逆":"正"}）`),
-      note:`第 ${qi+1} 籤總結：${poem.join("　")} — ${jie}`, noteLabel:"籤 · 總結", when:new Date(),
-      shareText:`【玄問 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n籤 · 第${qi+1}籤 ${luck}：${poem.join("　")}`});
+    const body=draw.map(d=>`${d.pos}：${d.card.zh}（${d.rev?'逆位':'正位'}）${d.rev?d.card.rev:d.card.up}`).join("\n");
+    shareCard({feature:"mixed", kind:"東西合參", wish:w, badge:luck, badgeColor:LUCK_COLOR[luck],
+      mix:{
+        tarot:draw.map(d=>({pos:d.pos, card:d.card.zh, orientation:d.rev?"逆位":"正位",
+          keywords:d.card.kw, meaning:d.rev?d.card.rev:d.card.up})),
+        qian:{no:qi+1, luck, poem, jie}
+      },
+      when:new Date(),
+      shareText:`【玄問 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n\n籤 · 第${qi+1}籤 ${luck}\n${poem.join("　")}\n${jie}`});
   });
   logEntry("spread:dongxi", draw.map(d=>d.card.zh+(d.rev?"(逆)":"(正)")).join("／")+`＋第${qi+1}籤`, w);
   requestAnimationFrame(()=>scrollToResult($("#tSlip")));
@@ -1700,11 +1827,13 @@ function showTarot(draw){
     shareCard(single
       ? {kind:`塔羅占卜 · ${draw[0].card.zh}`, cardImg:`cards/${draw[0].card.img}`,
          badge:draw[0].rev?"逆位":"正位", badgeColor:draw[0].rev?"#8f2519":"#3f7a3a", wish:w,
-         note:draw[0].rev?draw[0].card.rev:draw[0].card.up, noteLabel:"釋 義", when:new Date(),
+         note:`關鍵詞 · ${draw[0].card.kw}\n${draw[0].rev?draw[0].card.rev:draw[0].card.up}`,
+         noteLabel:"釋 義", when:new Date(),
          shareText:`【玄問 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`}
-      : {kind:"塔羅 · 三張牌", wish:w,
-         lines:draw.map(d=>`${d.pos} · ${d.card.zh}（${d.rev?"逆":"正"}）`),
-         note:draw.map(d=>`${d.pos}：${d.rev?d.card.rev:d.card.up}`).join("\n"), noteLabel:"釋 義", when:new Date(),
+      : {feature:"tarot3", kind:"塔羅 · 三張牌", wish:w,
+         tarot:draw.map(d=>({pos:d.pos, card:d.card.zh, orientation:d.rev?"逆位":"正位",
+           keywords:d.card.kw, meaning:d.rev?d.card.rev:d.card.up})),
+         when:new Date(),
          shareText:`【玄問 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`});
   });
   logEntry("tarot", draw.map(d=>`${d.card.zh}${d.rev?"(逆)":"(正)"}`).join("／"), $("#tAsk").value.trim());
@@ -1835,10 +1964,13 @@ function renderZFortune(){
      <div class="acts"><button class="act share" id="zShare">分享 ⤴</button></div>
    </div></div>`;
   $("#zShare").addEventListener("click",()=>shareCard({
-    kind:"今日運勢", badge:`${z.sym} ${z.nm}`, badgeColor:"#8a5a1a",
-    lines:[`整體 ${"★".repeat(avg)}${"☆".repeat(5-avg)}`,`愛情 ${"★".repeat(st.love)}${"☆".repeat(5-st.love)}`,
-           `工作 ${"★".repeat(st.work)}${"☆".repeat(5-st.work)}`,`財運 ${"★".repeat(st.money)}${"☆".repeat(5-st.money)}`],
-    note:`${otx}\n幸運色 ${color}｜幸運數字 ${num}｜${tip}`, when:now,
+    feature:"fortune", kind:"今日運勢", badge:`${z.sym} ${z.nm}`, badgeColor:"#8a5a1a",
+    fortune:{rows:[
+      {label:"整體", stars:avg, text:otx},
+      {label:"愛情", stars:st.love, text:tx.love},
+      {label:"工作", stars:st.work, text:tx.work},
+      {label:"財運", stars:st.money, text:tx.money}],
+      color, num, tip}, when:now,
     shareText:`【玄問 · ${z.nm}今日運勢 ${fmtI(now).replace(/-/g,"/")}】\n整體${"★".repeat(avg)} ${otx}\n愛情${"★".repeat(st.love)} ${tx.love}\n工作${"★".repeat(st.work)} ${tx.work}\n財運${"★".repeat(st.money)} ${tx.money}\n幸運色 ${color}｜幸運數字 ${num}`}));
 }
 $("#zGrid").addEventListener("click",e=>{
