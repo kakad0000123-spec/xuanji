@@ -75,7 +75,19 @@
 
 **v1.1d 求問強化**：問事分類 chips ＋ `advice-data.js` 四段式套版（吉凶級×分類）→ 掛進求籤/塔羅結果卡
 
-**v1.1e 儀式與招牌**：擲筊確認流程（xj_settings 開關，包在抽籤/抽牌前）＋ 混合牌陣（牌陣註冊表加一筆 {三牌+一籤}）
+**v1.1e 儀式與招牌**：
+1. **前置重構（~半小時）**：抽取邏輯純函式化——`pickTarot()/pickQian()/pickGua()/tossJiaoOnce()` 只回資料、不碰 DOM；渲染統一走結果卡。現有功能行為不變。
+2. 擲筊確認流程（xj_settings 開關，包在抽籤/抽牌前）。
+3. **儀式管線（SPREADS 註冊表）**——本產品的差異化核心。牌陣＝槽位序列，**每槽可來自不同系統**：
+   ```js
+   { id:"dongxi", name:"東西合參", steps:[
+     {source:"jiao",  role:"請示", gate:true},      // 聖筊才開抽
+     {source:"tarot", role:"現在"},{source:"tarot", role:"阻礙"},{source:"tarot", role:"未來"},
+     {source:"qian",  role:"總結提醒"},
+     {source:"almanac", role:"今日時運", context:true} ]}
+   ```
+   之後任何新陣（先筊後籤、卦+塔羅互參）＝ SPREADS 加一筆，不寫新程式。
+   AI 合約不用改（payload 泛型天生吃混合結果）；logEntry type 用 `spread:<id>`。
 
 **v1.1f 收口**：紀錄簿 UI（讀 journal 時間軸）＋ 分享圖卡（canvas 共用繪卡器，各功能餵資料）
 
