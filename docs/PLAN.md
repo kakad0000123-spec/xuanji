@@ -28,8 +28,11 @@
 │   $ / rnd / buzz / toast / share / escapeHTML / wishHTML
 │   LS（localStorage 包裝）/ dateSeed / pad / fmtI / parseI
 │   lunarOf / almanacOf / T()簡→繁
-│   〔待補〕seedRnd(seed) 有種子PRNG ─ 星座每日運勢要用
-│   〔待補〕logEntry(type,payload) 紀錄簿統一寫入口
+│   ✅ seedRnd(seed) 有種子PRNG（v1.1a 已入）
+│   ✅ logEntry(type,payload) 紀錄簿統一寫入口（v1.1a 已入）
+│   〔待補〕motion layer：CSS tokens（--motion-fast/--motion-ritual）＋共用 keyframes
+│           （pop/pulseGlow/flipCard/landRipple）＋ anim(el,cls) helper
+│           （animationend 與 timeout 賽跑防卡死；只動 transform/opacity/filter）─ v1.1e 前置
 ├ 引擎/資料：lunar.js ｜ tarot-data.js ｜ QIAN/GUA(暫留主檔) ｜ zodiac-data.js…
 └ 平台：Vercel 靜態 ＋（v2.0 起）唯一 serverless /api/interpret
 ```
@@ -77,6 +80,7 @@
 
 **v1.1e 儀式與招牌**：
 1. **前置重構（~半小時）**：抽取邏輯純函式化——`pickTarot()/pickQian()/pickGua()/tossJiaoOnce()` 只回資料、不碰 DOM；渲染統一走結果卡。現有功能行為不變。
+1b. **motion layer 鋪設**（與純函式化同批）：tokens＋keyframes＋anim() helper。動畫升級跟著本版一起做（不另開版本，避免碰同段程式兩次）：擲筊筊杯/落地光（tossJiao 本來就要改）、塔羅翻牌（抽牌流程本來就要改，翻牌需牌背牌面同容器 3D 翻轉，與 outerHTML 換法互斥）；reel 停格金光、配對 count-up、曆法輕 glow 為收尾小件。判準：每 view 一個主動畫焦點。
 2. 擲筊確認流程（xj_settings 開關，包在抽籤/抽牌前）。
 3. **儀式管線（SPREADS 註冊表）**——本產品的差異化核心。牌陣＝槽位序列，**每槽可來自不同系統**：
    ```js
@@ -103,3 +107,5 @@
 | 夢境解析、占星合盤 | 稀釋定位；合盤 v2.0 後看數據，且第一版只用塔羅牌陣不算星盤 |
 | 星座直接塞第 6 顆主分頁 | 已被 v1.05 註冊表+分組取代 |
 | 變現先行 | 沒 Analytics 數據就定價=自欺；先免費限次收數據 |
+| 常態背景動畫（燈籠搖曳/飄粒子）、農民曆宜忌跳動 | 搶主功能焦點；資訊頁只准淡入（2026-07-07 動畫檢視定案） |
+| 動畫先做、v1.1e 後做 | 擲筊/塔羅動畫與 v1.1e 重構碰同段程式，分開做=白工一次 |
