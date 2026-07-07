@@ -46,7 +46,7 @@
   .chip small{color:var(--gold-d);}
 
   /* ---------- Tabs ---------- */
-  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:11px 0 9px;}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:11px 0 9px;}
   .tab{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
     border-radius:12px;padding:10px 2px 9px;text-align:center;cursor:pointer;color:var(--gold);
     transition:transform .12s, box-shadow .2s;font-family:inherit;}
@@ -285,6 +285,39 @@
   .alma .more{background:none;border:none;color:#8f2519;font-family:inherit;font-size:13px;
     cursor:pointer;padding:2px 0;text-decoration:underline;letter-spacing:1px;}
 
+  /* ---------- 星座 ---------- */
+  .zgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px;}
+  .zbtn{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:9px 2px 7px;
+    color:var(--gold-d);cursor:pointer;font-family:inherit;text-align:center;}
+  .zbtn .zs{display:block;font-size:20px;line-height:1.2;color:var(--gold);}
+  .zbtn .zn{font-size:11.5px;letter-spacing:0;}
+  .zbtn.on{background:linear-gradient(180deg,#f2da8e,#cba455);border-color:#e7cd82;color:#3a2c12;font-weight:700;}
+  .zbtn.on .zs{color:#3a2c12;}
+  .zhead{display:flex;align-items:center;gap:12px;border-bottom:1px dashed rgba(120,60,20,.4);padding-bottom:10px;margin-bottom:6px;}
+  .zhead .bigsym{font-size:44px;color:#7a1e14;line-height:1;}
+  .zhead .t1{font-size:22px;font-weight:700;color:#7a1e14;}
+  .zhead .t2{font-size:12.5px;color:#8a6a3a;margin-top:2px;}
+  .fst{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed rgba(120,60,20,.25);}
+  .fst .lab2{flex:0 0 44px;font-weight:700;color:#7a1e14;letter-spacing:2px;}
+  .fst .star{flex:0 0 auto;color:#b3261a;letter-spacing:2px;}
+  .fst .star .off{color:rgba(120,60,20,.25);}
+  .fst .txt{flex:1;font-size:13.5px;color:#3c2f1e;line-height:1.6;text-align:left;}
+  .fluck{display:flex;flex-wrap:wrap;gap:7px 16px;padding:11px 0 2px;font-size:13px;color:#5a3a1a;}
+  .fluck b{color:#7a1e14;}
+  .retro{margin-top:9px;background:rgba(143,37,25,.08);border:1px solid rgba(143,37,25,.3);
+    border-radius:8px;padding:8px 11px;font-size:12.5px;color:#7a1e14;line-height:1.6;}
+  .pairrow{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .pairx{color:var(--gold-d);font-size:18px;flex:0 0 auto;}
+  .scorewrap{text-align:center;padding:4px 0 10px;border-bottom:1px dashed rgba(120,60,20,.3);margin-bottom:10px;}
+  .scorenum{font-size:52px;font-weight:700;color:#7a1e14;line-height:1.1;}
+  .scoretier{font-size:16px;font-weight:700;color:#b3261a;letter-spacing:3px;}
+  .scorebar{height:8px;border-radius:4px;background:rgba(120,60,20,.15);margin:10px 12px 0;overflow:hidden;}
+  .scorebar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#c65a10,#b3261a);}
+  .moonbig{text-align:center;padding:6px 0 2px;}
+  .moonbig .mj{font-size:64px;line-height:1.15;filter:drop-shadow(0 0 14px rgba(215,181,102,.35));}
+  .moonbig .mn2{font-size:20px;font-weight:700;color:#7a1e14;margin-top:4px;letter-spacing:2px;}
+  .moonbig .md2{font-size:13px;color:#8a6a3a;margin-top:3px;}
+
   :focus-visible{outline:2px solid var(--gold-b);outline-offset:2px;}
   @media(prefers-reduced-motion:reduce){
     .blk.tumbling{animation-duration:.15s;}
@@ -385,6 +418,28 @@
       <div id="tSlip"></div>
     </div>
 
+    <!-- ===== 星座：今日運勢 ===== -->
+    <div class="view" id="v-astro">
+      <div class="zgrid" id="zGrid"></div>
+      <div id="zBody"></div>
+    </div>
+
+    <!-- ===== 星座：配對 ===== -->
+    <div class="view" id="v-astropair">
+      <div class="pairrow">
+        <select class="dpick grow" id="pairA" aria-label="星座A"></select>
+        <span class="pairx">×</span>
+        <select class="dpick grow" id="pairB" aria-label="星座B"></select>
+      </div>
+      <button class="btn gold serif" id="pairBtn">合 參</button>
+      <div id="pairBody"></div>
+    </div>
+
+    <!-- ===== 星座：月相水逆 ===== -->
+    <div class="view" id="v-astrosky">
+      <div id="skyBody"></div>
+    </div>
+
     <!-- ===== 農民曆 ===== -->
     <div class="view" id="v-almanac">
       <div class="daterow">
@@ -414,6 +469,7 @@
 
 <script src="lunar.js"></script>
 <script src="tarot-data.js"></script>
+<script src="zodiac-data.js"></script>
 <script>
 "use strict";
 
@@ -564,6 +620,19 @@ const $ = s => document.querySelector(s);
 const rnd = n => Math.floor(Math.random()*n);
 function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 
+// kernel：有種子 PRNG（mulberry32）——「同日同座固定」類功能一律用這個
+function seedRnd(seed){
+  let a=seed>>>0;
+  return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; };
+}
+// kernel：紀錄簿統一寫入口（append-only，容量 300；紀錄簿 UI 只讀不寫）
+function logEntry(type, summary, q){
+  const arr=LS.get("xj_journal",[]);
+  arr.push({t:Date.now(), type, q:q||"", s:summary});
+  LS.set("xj_journal", arr.length>300 ? arr.slice(-300) : arr);
+}
+
 // 儲存 / 分享 / 提示 / 願望列
 const LS={ get(k,d){ try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;} },
            set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} } };
@@ -591,7 +660,7 @@ const fmtI = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}
 const parseI = v => { const [y,m,d]=v.split("-").map(Number); return new Date(y,m-1,d); };
 const ZEMO = {鼠:"🐭",牛:"🐮",虎:"🐯",兔:"🐰",龍:"🐲",蛇:"🐍",馬:"🐎",羊:"🐑",猴:"🐵",雞:"🐔",狗:"🐶",豬:"🐷"};
 // lunar-javascript 只有簡體，這裡做簡→繁：涵蓋掃了 42 年後引擎「可能吐出」的全部字（生肖/建除/節氣/農曆/宜忌/沖煞方位）
-const S2T = {东:"東",丧:"喪",产:"產",亲:"親",仓:"倉",会:"會",养:"養",动:"動",医:"醫",发:"發",启:"啟",坏:"壞",坟:"墳",墙:"牆",处:"處",学:"學",宁:"寧",寿:"壽",帐:"帳",庙:"廟",开:"開",归:"歸",惊:"驚",执:"執",扫:"掃",挂:"掛",斋:"齋",断:"斷",无:"無",机:"機",桥:"橋",殓:"殮",涂:"塗",渔:"漁",满:"滿",猎:"獵",猪:"豬",盖:"蓋",种:"種",竖:"豎",筑:"築",纳:"納",经:"經",结:"結",绘:"繪",络:"絡",网:"網",腊:"臘",艺:"藝",补:"補",订:"訂",讼:"訟",词:"詞",诸:"諸",谢:"謝",谷:"穀",财:"財",货:"貨",车:"車",进:"進",针:"針",钻:"鑽",门:"門",闭:"閉",问:"問",闰:"閏",饰:"飾",馀:"餘",马:"馬",鸡:"雞",龙:"龍",蚁:"蟻",蛰:"蟄",厕:"廁",习:"習"};
+const S2T = {东:"東",丧:"喪",产:"產",亲:"親",仓:"倉",会:"會",养:"養",动:"動",医:"醫",发:"發",启:"啟",坏:"壞",坟:"墳",墙:"牆",处:"處",学:"學",宁:"寧",寿:"壽",帐:"帳",庙:"廟",开:"開",归:"歸",惊:"驚",执:"執",扫:"掃",挂:"掛",斋:"齋",断:"斷",无:"無",机:"機",桥:"橋",殓:"殮",涂:"塗",渔:"漁",满:"滿",猎:"獵",猪:"豬",盖:"蓋",种:"種",竖:"豎",筑:"築",纳:"納",经:"經",结:"結",绘:"繪",络:"絡",网:"網",腊:"臘",艺:"藝",补:"補",订:"訂",讼:"訟",词:"詞",诸:"諸",谢:"謝",谷:"穀",财:"財",货:"貨",车:"車",进:"進",针:"針",钻:"鑽",门:"門",闭:"閉",问:"問",闰:"閏",饰:"飾",馀:"餘",马:"馬",鸡:"雞",龙:"龍",蚁:"蟻",蛰:"蟄",厕:"廁",习:"習",渐:"漸",亏:"虧",残:"殘",寝:"寢",晓:"曉"};
 const T = s => { if(!s) return s; let o=""; for(const ch of s) o+=(S2T[ch]||ch); return o; };
 function lunarOf(date){
   return Solar.fromYmd(date.getFullYear(), date.getMonth()+1, date.getDate()).getLunar();
@@ -647,6 +716,10 @@ const NAV=[
   {id:"ask",   ic:"🏮", tx:"求問", subs:[
     {v:"qian", tx:"求籤"}, {v:"gua", tx:"抽卦"}, {v:"jiao", tx:"擲筊"} ]},
   {id:"tarot", ic:"🔮", tx:"塔羅", subs:[ {v:"tarot", tx:"塔羅"} ]},
+  {id:"astro", ic:"⭐", tx:"星座", subs:[
+    {v:"astro",     tx:"今日運勢", onEnter:()=>renderZFortune()},
+    {v:"astropair", tx:"配對",     onEnter:()=>initPair()},
+    {v:"astrosky",  tx:"月相水逆", onEnter:()=>renderSky()} ]},
   {id:"alm",   ic:"📜", tx:"曆法", subs:[
     {v:"almanac", tx:"農民曆", onEnter:()=>{ if(!almRendered) showAlmanac(new Date()); }} ]},
 ];
@@ -734,6 +807,7 @@ function drawQian(){
     }else{
       setQReel(target); qSpinning=false; $("#qBtn").disabled=false;
       buzz([15,40,15]); showQian(target, qDrawDate);
+      logEntry("qian", `第 ${target+1} 籤 ${QIAN[target][1]}`, $("#qAsk").value.trim());
       if(qMode==="today") LS.set("xj_qian",{date:fmtI(qDrawDate),lot:target});
       requestAnimationFrame(()=>$("#qSlip").scrollIntoView({behavior:"smooth",block:"start"}));
     }
@@ -819,6 +893,7 @@ function drawGua(){
     }else{
       setGReel(target); gSpinning=false; $("#gBtn").disabled=false;
       buzz([15,40,15]); showGua(target);
+      logEntry("gua", `${GUA[target][1]}卦（第 ${GUA[target][0]} 卦）`, $("#gAsk").value.trim());
       requestAnimationFrame(()=>$("#gSlip").scrollIntoView({behavior:"smooth",block:"start"}));
     }
   })(start);
@@ -902,6 +977,7 @@ function tossJiao(){
     buzz(v.k==="聖"?[15,50,15,50,15]:30);
     tossing=false; $("#jBtn").disabled=false;
     saveJ();
+    logEntry("jiao", v.name, w);
   }, 900);
 }
 function saveJ(){ LS.set("xj_jiao",{tally,streak,optStreak,optBless}); }
@@ -999,12 +1075,152 @@ function showTarot(draw){
     const body=draw.map(d=>`${d.pos?d.pos+"：":""}${d.card.zh}（${d.rev?'逆位':'正位'}）${d.rev?d.card.rev:d.card.up}`).join("\n");
     share(`【玄機籤閣 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`);
   });
+  logEntry("tarot", draw.map(d=>`${d.card.zh}${d.rev?"(逆)":"(正)"}`).join("／"), $("#tAsk").value.trim());
   requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
 }
 $("#tS1").addEventListener("click",()=>tSetSpread(1));
 $("#tS3").addEventListener("click",()=>tSetSpread(3));
 $("#tBtn").addEventListener("click",drawTarot);
 tResetStage();
+
+/* ============================================================
+   6) 星座（L1：今日運勢/配對；L2：月相/水逆）——全離線
+   同日同座運勢固定：seedRnd(dateSeed ^ 星座索引)
+   ============================================================ */
+const STAR=(n)=>'<span class="star">'+"★".repeat(n)+'<span class="off">'+"★".repeat(5-n)+"</span></span>";
+function zTier(n){ return n>=4?"high":(n===3?"mid":"low"); }
+function zSigned(){ return LS.get("xj_profile",{}).sign ?? -1; }
+function renderZGrid(){
+  const cur=zSigned();
+  $("#zGrid").innerHTML=ZODIAC.map((z,i)=>
+    `<button class="zbtn${i===cur?' on':''}" data-i="${i}" aria-selected="${i===cur}">
+       <span class="zs">${z.sym}</span><span class="zn">${z.nm}</span></button>`).join("");
+}
+function mercNow(d){
+  const t=fmtI(d);
+  for(const [a,b] of MERC_RETRO){ if(t>=a&&t<=b) return {on:true,a,b}; }
+  const next=MERC_RETRO.find(([a])=>a>t);
+  return {on:false, a:next?next[0]:"", b:next?next[1]:""};
+}
+const zShort=s=>s?s.slice(5).replace("-","/"):"";
+function renderZFortune(){
+  renderZGrid();
+  const i=zSigned();
+  if(i<0){ $("#zBody").innerHTML='<div style="text-align:center;color:var(--gold-d);padding:26px 0;letter-spacing:2px;">點上方選擇你的星座 ✨</div>'; return; }
+  const z=ZODIAC[i], now=new Date();
+  const rng=seedRnd((dateSeed(now)^(i*2654435761))>>>0);
+  const st={}, tx={};
+  for(const k of ["love","work","money"]){
+    st[k]=2+Math.floor(rng()*4);                       // 2~5 星
+    const pool=Z_POOL[k][zTier(st[k])];
+    tx[k]=pool[Math.floor(rng()*pool.length)];
+  }
+  const avg=Math.round((st.love+st.work+st.money)/3);
+  const opool=Z_POOL.overall[zTier(avg)];
+  const otx=opool[Math.floor(rng()*opool.length)];
+  const color=Z_COLORS[Math.floor(rng()*Z_COLORS.length)];
+  const num=1+Math.floor(rng()*99);
+  const tip=Z_TIPS[Math.floor(rng()*Z_TIPS.length)];
+  const mc=mercNow(now);
+  const retro=mc.on?`<div class="retro">☿ 水逆進行中（${zShort(mc.a)}–${zShort(mc.b)}）：備份檔案、確認訊息、舊案重談，重大簽約先緩。</div>`:"";
+  $("#zBody").innerHTML=`
+   <div class="slip"><div class="stub"></div><div class="body">
+     <div class="zhead">
+       <div class="bigsym">${z.sym}</div>
+       <div><div class="t1 serif">${z.nm}</div>
+       <div class="t2">${z.from[0]}/${z.from[1]}–${z.to[0]}/${z.to[1]} · ${z.el}象 · 守護星 ${z.ruler}</div>
+       <div class="t2">${fmtI(now).replace(/-/g,"/")} 今日運勢</div></div>
+     </div>
+     <div class="fst"><span class="lab2">整體</span><span class="txt">${otx}</span>${STAR(avg)}</div>
+     <div class="fst"><span class="lab2">愛情</span><span class="txt">${tx.love}</span>${STAR(st.love)}</div>
+     <div class="fst"><span class="lab2">工作</span><span class="txt">${tx.work}</span>${STAR(st.work)}</div>
+     <div class="fst"><span class="lab2">財運</span><span class="txt">${tx.money}</span>${STAR(st.money)}</div>
+     <div class="fluck"><span>幸運色 <b>${color}</b></span><span>幸運數字 <b>${num}</b></span><span>開運小語 <b>${tip}</b></span></div>
+     ${retro}
+     <div class="acts"><button class="act share" id="zShare">分享 ⤴</button></div>
+   </div></div>`;
+  $("#zShare").addEventListener("click",()=>share(
+    `【玄機籤閣 · ${z.nm}今日運勢 ${fmtI(now).replace(/-/g,"/")}】\n整體${"★".repeat(avg)} ${otx}\n愛情${"★".repeat(st.love)} ${tx.love}\n工作${"★".repeat(st.work)} ${tx.work}\n財運${"★".repeat(st.money)} ${tx.money}\n幸運色 ${color}｜幸運數字 ${num}`));
+}
+$("#zGrid").addEventListener("click",e=>{
+  const b=e.target.closest(".zbtn"); if(!b) return;
+  LS.set("xj_profile",{...LS.get("xj_profile",{}), sign:+b.dataset.i});
+  buzz(15); renderZFortune();
+});
+
+// —— 配對 ——
+let pairInit=false;
+function initPair(){
+  if(pairInit) return; pairInit=true;
+  const opts=ZODIAC.map((z,i)=>`<option value="${i}">${z.sym} ${z.nm}</option>`).join("");
+  $("#pairA").innerHTML=opts; $("#pairB").innerHTML=opts;
+  const me=zSigned(); if(me>=0) $("#pairA").value=me;
+  $("#pairB").value=(me>=0?(me+6)%12:6);
+}
+function pairHash(a,b){ const s=Math.min(a,b)*100+Math.max(a,b); let h=s^0x9e37; h=Math.imul(h,2654435761)>>>0; return h; }
+$("#pairBtn").addEventListener("click",()=>{
+  const a=+$("#pairA").value, b=+$("#pairB").value;
+  const A=ZODIAC[a], B=ZODIAC[b];
+  const base=Z_ELBASE[A.el+B.el]||60;
+  const score=Math.max(42,Math.min(97, base + pairHash(a,b)%9 - 4));
+  const tier=Z_TIERS.find(t=>score>=t.min);
+  buzz(15);
+  $("#pairBody").innerHTML=`
+   <div class="slip"><div class="stub"></div><div class="body">
+     <div class="scorewrap">
+       <div style="font-size:15px;color:#8a6a3a;margin-bottom:2px;">${A.sym}${A.nm} × ${B.sym}${B.nm}</div>
+       <div class="scorenum">${score}<span style="font-size:20px;">分</span></div>
+       <div class="scoretier serif">${tier.name}</div>
+       <div class="scorebar"><i style="width:${score}%"></i></div>
+     </div>
+     <div class="jie-t serif">相性解析</div>
+     <div class="jie">${A.el}象（${A.trait}）遇上${B.el}象（${B.trait}）。${tier.desc}</div>
+     <div class="jie-t serif">相處建議</div>
+     <div class="jie">${tier.adv}</div>
+     <div class="acts"><button class="act share" id="pairShare">分享 ⤴</button></div>
+   </div></div>`;
+  $("#pairShare").addEventListener("click",()=>share(
+    `【玄機籤閣 · 星座配對】${A.nm} × ${B.nm}＝${score}分（${tier.name}）\n${tier.desc}`));
+  logEntry("pair", `${A.nm}×${B.nm} ${score}分 ${tier.name}`);
+});
+
+// —— 月相水逆 ——
+function moonEmoji(d){ // 農曆日 1~30 → 月相 emoji
+  if(d<=2||d>=29) return "🌑"; if(d<=6) return "🌒"; if(d<=9) return "🌓";
+  if(d<=13) return "🌔"; if(d<=16) return "🌕"; if(d<=20) return "🌖";
+  if(d<=23) return "🌗"; return "🌘";
+}
+function renderSky(){
+  const now=new Date();
+  const l=lunarOf(now);
+  const yx=T(l.getYueXiang());
+  // 往後掃 45 天找下一個朔（初一）與望（十五）
+  let s=Solar.fromYmd(now.getFullYear(),now.getMonth()+1,now.getDate());
+  let nextNew="", nextFull="";
+  for(let i=1;i<=45 && (!nextNew||!nextFull);i++){
+    const s2=s.next(i), l2=s2.getLunar();
+    if(!nextNew && l2.getDay()===1)  nextNew =`${s2.getMonth()}/${s2.getDay()}`;
+    if(!nextFull && l2.getDay()===15) nextFull=`${s2.getMonth()}/${s2.getDay()}`;
+  }
+  const mc=mercNow(now);
+  const mrows=MERC_RETRO.filter(([a])=>a.slice(0,4)>=String(now.getFullYear()))
+    .map(([a,b])=>{ const on=(fmtI(now)>=a&&fmtI(now)<=b);
+      return `<div class="fst"><span class="lab2">${a.slice(0,4)}</span><span class="txt">${zShort(a)} – ${zShort(b)}${on?"（進行中）":""}</span></div>`; }).join("");
+  $("#skyBody").innerHTML=`
+   <div class="slip"><div class="stub"></div><div class="body">
+     <div class="moonbig">
+       <div class="mj">${moonEmoji(l.getDay())}</div>
+       <div class="mn2 serif">今夜月相 · ${yx}</div>
+       <div class="md2">農曆${T(l.getMonthInChinese())}月${T(l.getDayInChinese())} · 下個新月 ${nextNew} · 下個滿月 ${nextFull}</div>
+     </div>
+     <div class="jie-t serif" style="margin-top:12px;">☿ 水星逆行</div>
+     <div class="jie">${mc.on
+        ?`目前<b>水逆進行中</b>（${zShort(mc.a)} – ${zShort(mc.b)}）。宜備份、確認、收尾與回顧；重大簽約、換工作、買 3C 可緩則緩。`
+        :`目前不在水逆期間。下次水逆：${zShort(mc.a)} – ${zShort(mc.b)}，可先把重要簽約與換機安排在此之前。`}</div>
+     ${mrows}
+     <div class="note" style="padding:8px 0 0;">※ 水逆日期為天文現象時刻表（已查證）；月相以農曆日近似，僅供參考。</div>
+   </div></div>`;
+}
 
 /* ============================================================
    4) 農民曆（選日期看黃曆：農曆日期／干支／節氣／建除／宜忌／沖煞方位）

@@ -6,6 +6,7 @@
 - `index.html` — 全部畫面與邏輯（無框架、無 build）。直接用瀏覽器開即可。
 - `lunar.js` — 農民曆引擎（[lunar-javascript](https://github.com/6tail/lunar-javascript)，6tail，MIT）。離線計算農曆／干支／節氣／建除／宜忌／沖煞方位。
 - `tarot-data.js` — 塔羅 78 張繁中牌義（正/逆位）。
+- `zodiac-data.js` — 星座資料：12 星座/元素配對規則/每日運勢文案池/水逆日期表（2026–2027，已查證：Old Farmer's Almanac、Britannica、Astro-Seek 三源一致）。運勢＝seedRnd(日期^星座) 套版組合，同日同座固定；月相用 lunar.js `getYueXiang`＋農曆日近似。
 - `cards/` — 塔羅牌面圖（Rider-Waite-Smith 1909，公有領域；圖檔取自 [metabismuth/tarot-json](https://github.com/metabismuth/tarot-json)，350×600）。
 - 本機預覽：`python3 -m http.server 8848` 後開 http://localhost:8848
 
