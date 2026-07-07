@@ -792,6 +792,16 @@ function countUp(el, target, ms=750){
   setTimeout(()=>{ el.textContent=target; }, ms+120);
 }
 const reduceMotion = ()=>{ try{ return matchMedia("(prefers-reduced-motion:reduce)").matches; }catch(e){ return false; } };
+// 柔性捲到結果：讓結果落在畫面「中下段」（上方保留剛翻好的牌/按鈕脈絡），
+// 只在結果還沒露出時才捲、尊重減動偏好——取代生硬的 scrollIntoView block:start（會把牌一口氣頂出畫面）。
+function scrollToResult(el){
+  if(!el) return;
+  const off = Math.round(window.innerHeight * 0.55);               // 結果頂端落在約 55% 高度處
+  const y = el.getBoundingClientRect().top + window.scrollY - off;
+  if(y <= window.scrollY + 8) return;                              // 結果已在畫面內就不動
+  try{ window.scrollTo({top:y, behavior: reduceMotion()?"auto":"smooth"}); }
+  catch(e){ window.scrollTo(0,y); }
+}
 
 // SVG 半月筊杯（朱紅 lacquer / 深木；金邊；同源、可縮放；uid 讓漸層 id 不衝突）
 function jiaoSVG(face, uid){
@@ -1080,7 +1090,7 @@ function _drawQian(){
       buzz([15,40,15]); showQian(target, qDrawDate);
       logEntry("qian", `第 ${target+1} 籤 ${QIAN[target][1]}`, $("#qAsk").value.trim());
       if(qMode==="today") LS.set("xj_qian",{date:fmtI(qDrawDate),lot:target});
-      requestAnimationFrame(()=>$("#qSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+      requestAnimationFrame(()=>scrollToResult($("#qSlip")));
     }
   })(start);
 }
@@ -1169,7 +1179,7 @@ function drawGua(){
       replay($("#gReel"),"flash");
       buzz([15,40,15]); showGua(target);
       logEntry("gua", `${GUA[target][1]}卦（第 ${GUA[target][0]} 卦）`, $("#gAsk").value.trim());
-      requestAnimationFrame(()=>$("#gSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+      requestAnimationFrame(()=>scrollToResult($("#gSlip")));
     }
   })(start);
 }
@@ -1447,7 +1457,7 @@ function showMixed(draw, qi){
     share(`【玄問 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n籤 · 第${qi+1}籤 ${luck}：${poem.join("　")}`);
   });
   logEntry("spread:dongxi", draw.map(d=>d.card.zh+(d.rev?"(逆)":"(正)")).join("／")+`＋第${qi+1}籤`, w);
-  requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+  requestAnimationFrame(()=>scrollToResult($("#tSlip")));
 }
 function showTarot(draw){
   $("#tSlip").innerHTML=`
@@ -1473,7 +1483,7 @@ function showTarot(draw){
       date:cardDate(), shareText:`【玄問 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`});
   });
   logEntry("tarot", draw.map(d=>`${d.card.zh}${d.rev?"(逆)":"(正)"}`).join("／"), $("#tAsk").value.trim());
-  requestAnimationFrame(()=>$("#tSlip").scrollIntoView({behavior:"smooth",block:"start"}));
+  requestAnimationFrame(()=>scrollToResult($("#tSlip")));
 }
 $("#tS1").addEventListener("click",()=>tSetSpread(1));
 $("#tS3").addEventListener("click",()=>tSetSpread(3));
