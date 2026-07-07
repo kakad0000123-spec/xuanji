@@ -851,46 +851,105 @@ function wrapText(x,text,maxW){ const out=[]; let line="";
   for(const ch of [...String(text)]){ if(ch==="\n"){ out.push(line); line=""; continue; }
     if(x.measureText(line+ch).width>maxW && line){ out.push(line); line=ch; } else line+=ch; }
   if(line) out.push(line); return out; }
-function drawShareCard(cfg){
-  return new Promise(resolve=>{
-    const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;
-    const x=c.getContext("2d"); x.textAlign="center"; x.textBaseline="alphabetic";
-    let g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,"#1e160d");g.addColorStop(.55,"#140f0a");g.addColorStop(1,"#0a0705");
-    x.fillStyle=g; x.fillRect(0,0,W,H);
-    g=x.createRadialGradient(W/2,-140,80,W/2,-140,940); g.addColorStop(0,"rgba(215,181,102,.16)");g.addColorStop(1,"rgba(0,0,0,0)");
-    x.fillStyle=g; x.fillRect(0,0,W,H);
-    x.strokeStyle="#c9a24e"; x.lineWidth=3; rrect(x,40,40,W-80,H-80,26); x.stroke();
-    x.strokeStyle="rgba(201,162,78,.4)"; x.lineWidth=1.5; rrect(x,52,52,W-104,H-104,20); x.stroke();
-    x.fillStyle="#e7cd82"; x.font=`700 46px ${CARD_SERIF}`; x.fillText("玄　問", W/2, 140);
-    x.fillStyle="#a68a48"; x.font=`27px ${CARD_SERIF}`; x.fillText(cfg.kind||"", W/2, 184);
-    x.strokeStyle="rgba(201,162,78,.45)"; x.lineWidth=1.5; x.beginPath(); x.moveTo(170,214); x.lineTo(W-170,214); x.stroke();
-    const rest=(y0)=>{
-      let y=y0;
-      if(cfg.title){ x.fillStyle="#f0d78d"; x.font=`700 76px ${CARD_SERIF}`; x.fillText(cfg.title,W/2,y); y+=8; }
-      if(cfg.badge){ y+=54; x.font=`700 32px ${CARD_SERIF}`; const bw=x.measureText(cfg.badge).width+56;
-        x.fillStyle=cfg.badgeColor||"#b8860b"; rrect(x,W/2-bw/2,y-40,bw,52,12); x.fill();
-        x.fillStyle="#fff8ee"; x.fillText(cfg.badge,W/2,y-4); y+=16; }
-      if(cfg.wish){ y+=52; x.fillStyle="#c0955a"; x.font=`30px ${CARD_SERIF}`;
-        x.fillText("所問 · "+wrapText(x,cfg.wish,W-260)[0], W/2, y); }
-      if(cfg.lines&&cfg.lines.length){ y+=76; x.fillStyle="#efe0bd"; x.font=`46px ${CARD_SERIF}`;
-        cfg.lines.forEach(l=>{ x.fillText(l,W/2,y); y+=70; }); }
-      if(cfg.note){ y+=34; x.fillStyle="#d7c398"; x.font=`34px ${CARD_SERIF}`; x.textAlign="left";
-        wrapText(x,cfg.note,W-220).forEach(l=>{ x.fillText(l,110,y); y+=52; }); x.textAlign="center"; }
-      x.fillStyle="#8a7340"; x.font=`26px ${CARD_SERIF}`;
-      x.textAlign="left"; x.fillText(cfg.date||"", 74, H-62);
-      x.textAlign="right"; x.fillText("xuanwen.vercel.app", W-74, H-62);
-      c.toBlob(b=>resolve(b),"image/png");
-    };
-    if(cfg.cardImg){
-      const im=new Image();
-      im.onload=()=>{ const iw=286, ih=iw*im.height/im.width, ix=(W-iw)/2, iy=250;
-        x.save(); x.strokeStyle="#c9a24e"; x.lineWidth=3; rrect(x,ix-4,iy-4,iw+8,ih+8,10); x.stroke();
-        rrect(x,ix,iy,iw,ih,6); x.clip(); x.drawImage(im,ix,iy,iw,ih); x.restore();
-        rest(iy+ih+80); };
-      im.onerror=()=>rest(320);
-      im.src=cfg.cardImg;
-    } else rest(cfg.lines?368:410);
-  });
+const CN_DIGIT="〇一二三四五六七八九".split("");
+const cnNum = n => String(n).split("").map(d=>CN_DIGIT[+d]).join("");
+function cnMD(n){ if(n<10) return CN_DIGIT[n]; if(n===10) return "十";
+  if(n<20) return "十"+CN_DIGIT[n-10]; const t=Math.floor(n/10),o=n%10; return CN_DIGIT[t]+"十"+(o?CN_DIGIT[o]:""); }
+const loadImg = src => new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; });
+function noiseDust(x,W,H){ for(let i=0;i<190;i++){ const px=Math.random()*W, py=Math.random()*H;
+  if(Math.min(px,W-px,py,H-py)>250 && Math.random()>0.14) continue;
+  x.globalAlpha=Math.random()*0.16; x.fillStyle=Math.random()>0.5?"#d7b566":"#8a6a3a";
+  x.fillRect(px,py,Math.random()*2+0.6,Math.random()*2+0.6); } x.globalAlpha=1; }
+function moonTop(x,cx,cy){ x.save(); x.strokeStyle="rgba(215,181,102,.32)"; x.lineWidth=1;
+  for(let a=0;a<14;a++){ const ang=a/14*Math.PI*2, r2=28+(a%2?9:0);
+    x.beginPath(); x.moveTo(cx+Math.cos(ang)*22,cy+Math.sin(ang)*22); x.lineTo(cx+Math.cos(ang)*r2,cy+Math.sin(ang)*r2); x.stroke(); }
+  x.fillStyle="#e3c882"; x.beginPath(); x.arc(cx,cy,14,0,7); x.fill();
+  x.fillStyle="#0c0906"; x.beginPath(); x.arc(cx+6,cy-3,13,0,7); x.fill(); x.restore(); }
+function medallion(x,cx,cy){ x.fillStyle="#7d1e13"; x.beginPath(); x.arc(cx,cy,19,0,7); x.fill();
+  x.strokeStyle="#e7cd82"; x.lineWidth=2; x.beginPath(); x.arc(cx,cy,19,0,7); x.stroke();
+  x.fillStyle="#e7cd82"; for(let a=0;a<6;a++){ const ang=a/6*Math.PI*2; x.beginPath(); x.arc(cx+Math.cos(ang)*7,cy+Math.sin(ang)*7,2.4,0,7); x.fill(); } }
+function sealStamp(x,cx,cy,s){ x.fillStyle="#b3261a"; rrect(x,cx-s/2,cy-s/2,s,s,8); x.fill();
+  x.strokeStyle="#e7cd82"; x.lineWidth=2; rrect(x,cx-s/2+3.5,cy-s/2+3.5,s-7,s-7,6); x.stroke();
+  x.fillStyle="#f6e9c8"; x.textAlign="center"; x.textBaseline="middle"; x.font=`700 ${Math.round(s*0.38)}px ${CARD_SERIF}`;
+  x.fillText("玄",cx,cy-s*0.2); x.fillText("問",cx,cy+s*0.22); x.textBaseline="alphabetic"; }
+function sectionDivider(x,cx,cy,label){ x.font=`26px ${CARD_SERIF}`; x.fillStyle="#8a5a2a"; x.textAlign="center";
+  const w=x.measureText(label).width, gap=w/2+22;
+  x.strokeStyle="rgba(150,110,50,.5)"; x.lineWidth=1.4;
+  x.beginPath(); x.moveTo(cx-gap-90,cy-8); x.lineTo(cx-gap,cy-8); x.moveTo(cx+gap,cy-8); x.lineTo(cx+gap+90,cy-8); x.stroke();
+  x.fillStyle="#b3261a"; x.beginPath(); x.arc(cx-gap-8,cy-8,3,0,7); x.arc(cx+gap+8,cy-8,3,0,7); x.fill();
+  x.fillStyle="#8a5a2a"; x.fillText(label,cx,cy); }
+function cartouche(x,cx,cy,text,color){ x.font=`700 42px ${CARD_SERIF}`; const w=Math.max(200,x.measureText(text).width+110), h=80;
+  x.strokeStyle=color; x.lineWidth=3; rrect(x,cx-w/2,cy-h/2,w,h,22); x.stroke();
+  x.strokeStyle=color; x.lineWidth=1.4; rrect(x,cx-w/2+8,cy-h/2+8,w-16,h-16,15); x.stroke();
+  x.fillStyle=color; x.textAlign="center"; x.textBaseline="middle"; x.fillText(text,cx,cy+2); x.textBaseline="alphabetic"; }
+function vPoem(x,poem,cx,topY,color){ const colGap=64, chGap=56; x.font=`44px ${CARD_SERIF}`; x.fillStyle=color; x.textAlign="center";
+  const n=poem.length, tot=(n-1)*colGap;
+  poem.forEach((line,i)=>{ const colX=cx+tot/2-i*colGap; [...line].forEach((ch,j)=>x.fillText(ch,colX,topY+j*chGap)); });
+  return topY + (Math.max(...poem.map(l=>[...l].length))-1)*chGap; }
+
+async function drawShareCard(cfg){
+  const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;
+  const x=c.getContext("2d");
+  // 背景：深黑棕漸層 ＋ 頂部微光 ＋ 程序式金粉紋
+  let g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,"#1a130b");g.addColorStop(.5,"#100c08");g.addColorStop(1,"#080605");
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  g=x.createRadialGradient(W/2,60,40,W/2,60,820); g.addColorStop(0,"rgba(215,181,102,.14)");g.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  noiseDust(x,W,H);
+  moonTop(x,W/2,116);
+  // 中央紙籤卡
+  const PX=94,PY=176,PW=W-188,PH=986, ST=46;
+  x.save(); rrect(x,PX,PY,PW,PH,22);
+  let pg=x.createLinearGradient(0,PY,0,PY+PH); pg.addColorStop(0,"#f4e7c8");pg.addColorStop(1,"#e8d3a4");
+  x.fillStyle=pg; x.fill(); x.clip();
+  x.fillStyle="#a4302a"; x.fillRect(PX,PY,PW,ST); x.fillRect(PX,PY+PH-ST,PW,ST);   // 朱紅上下壓條
+  x.globalAlpha=.5; noiseDust(x,W,H); x.globalAlpha=1;                              // 紙面微紋
+  x.restore();
+  x.strokeStyle="rgba(150,110,50,.55)"; x.lineWidth=2; rrect(x,PX+14,PY+14,PW-28,PH-28,14); x.stroke();  // 金框
+  medallion(x,W/2,PY+ST/2); medallion(x,W/2,PY+PH-ST/2);
+  // 預載塔羅牌面（若有）
+  let im=null; if(cfg.cardImg){ try{ im=await loadImg(cfg.cardImg); }catch(e){} }
+
+  let y=PY+ST+92;
+  // 玄問 字標（墨色）＋兩側朱紅小鑽
+  x.textAlign="center"; x.fillStyle="#3a2a15"; x.font=`700 66px ${CARD_SERIF}`; x.fillText("玄　問",W/2,y);
+  x.fillStyle="#b3261a"; [ -196,196 ].forEach(dx=>{ x.save(); x.translate(W/2+dx,y-20); x.rotate(Math.PI/4); x.fillRect(-6,-6,12,12); x.restore(); });
+  if(cfg.kind){ x.fillStyle="#9a7434"; x.font=`27px ${CARD_SERIF}`; x.fillText(cfg.kind,W/2,y+40); }
+  y+=92;
+  if(cfg.badge){ cartouche(x,W/2,y+18,cfg.badge,cfg.badgeColor||"#a4302a"); y+=92; }
+  if(cfg.wish){ x.fillStyle="#9a5a3a"; x.font=`28px ${CARD_SERIF}`; x.fillText("所問 · "+wrapText(x,cfg.wish,PW-160)[0],W/2,y); y+=44; }
+
+  if(im){ const iw=300, ih=iw*im.naturalHeight/im.naturalWidth, ix=(W-iw)/2, iy=y+6;
+    x.save(); x.strokeStyle="#a4302a"; x.lineWidth=3; rrect(x,ix-5,iy-5,iw+10,ih+10,9); x.stroke();
+    rrect(x,ix,iy,iw,ih,6); x.clip(); x.drawImage(im,ix,iy,iw,ih); x.restore(); y=iy+ih+34; }
+  else if(cfg.poem&&cfg.poem.length){ sectionDivider(x,W/2,y,"籤 詩"); y+=52; y=vPoem(x,cfg.poem,W/2,y,"#3c2a16")+70; }
+  else if(cfg.lines&&cfg.lines.length){ y+=14; x.font=`38px ${CARD_SERIF}`; x.fillStyle="#4a3620";
+    cfg.lines.forEach(l=>{ x.fillText(l,W/2,y); y+=60; }); y+=6; }
+
+  if(cfg.note){ sectionDivider(x,W/2,y,cfg.noteLabel||"籤 解"); y+=46;
+    const bx=PX+56, bw=PW-112;
+    x.font=`30px ${CARD_SERIF}`;                       // 先設字型再量，避免換行寬度算錯
+    const rows=wrapText(x,cfg.note,bw-58); const bh=rows.length*44+38;
+    x.strokeStyle="rgba(150,110,50,.45)"; x.lineWidth=1.4; rrect(x,bx,y-8,bw,bh,10); x.stroke();
+    x.fillStyle="#43301a"; x.textAlign="left";
+    let ty=y+32; rows.forEach(l=>{ x.fillText(l,bx+29,ty); ty+=44; }); x.textAlign="center"; }
+
+  // Footer lockup（左 日期/農曆 · 中 分隔 · 右 印章+玄問+極淡 domain）
+  const when=cfg.when||new Date(), FY=H-96;
+  const dateCn=cnNum(when.getFullYear())+"年　"+cnMD(when.getMonth()+1)+"月"+cnMD(when.getDate())+"日";
+  let lunarStr=""; try{ const l=lunarOf(when); lunarStr="農曆　"+T(l.getMonthInChinese())+"月"+T(l.getDayInChinese()); }catch(e){}
+  x.textAlign="left"; x.fillStyle="#9a8043"; x.font=`27px ${CARD_SERIF}`;
+  x.beginPath(); x.arc(PX+18,FY-8,9,0,7); x.strokeStyle="#9a8043"; x.lineWidth=2; x.stroke();
+  x.fillStyle="#9a8043"; x.beginPath(); x.arc(PX+18,FY-8,3,0,7); x.fill();
+  x.fillStyle="#a88b46"; x.fillText(dateCn,PX+40,FY); x.fillStyle="#8a7038"; x.fillText(lunarStr,PX+40,FY+34);
+  x.strokeStyle="rgba(201,162,78,.28)"; x.lineWidth=1; x.beginPath(); x.moveTo(W/2,FY-30); x.lineTo(W/2,FY+34); x.stroke();
+  x.fillStyle="rgba(201,162,78,.5)"; x.beginPath(); x.arc(W/2,FY+2,3,0,7); x.fill();
+  sealStamp(x,W-296,FY+2,52);
+  x.textAlign="left"; x.fillStyle="#d7b566"; x.font=`700 44px ${CARD_SERIF}`; x.fillText("玄問",W-256,FY+8);
+  x.fillStyle="rgba(160,132,70,.72)"; x.font=`19px ${CARD_SERIF}`; x.textAlign="left";
+  x.save(); x.translate(W-256,FY+34); x.fillText("x u a n w e n . v e r c e l . a p p",0,0); x.restore();
+
+  return await new Promise(res=>c.toBlob(res,"image/png"));
 }
 async function shareCard(cfg){
   try{
@@ -905,7 +964,6 @@ async function shareCard(cfg){
   }catch(e){ if(cfg.shareText) share(cfg.shareText); else toast("圖卡產生失敗"); }
 }
 const LUCK_COLOR={上上籤:"#b3261a",上吉籤:"#c65a10",中吉籤:"#b8860b",中平籤:"#6f7a4a",下下籤:"#5a4a3a"};
-const cardDate = d => fmtI(d||new Date()).replace(/-/g,"/");
 function wishHTML(sel){ const v=$(sel).value.trim(); return v?`<div class="wish">所問 · ${escapeHTML(v)}</div>`:""; }
 
 // —— 問事分類 + 四段式套版解讀（求籤/塔羅共用）——
@@ -1126,8 +1184,8 @@ function showQian(i, date){
    </div>`;
   $("#qShare").addEventListener("click",()=>{
     const w=$("#qAsk").value.trim();
-    shareCard({kind:"每日求籤", title:`第 ${i+1} 籤`, badge:luck, badgeColor:LUCK_COLOR[luck],
-      wish:w, lines:poem, note:jie, date:cardDate(date),
+    shareCard({kind:`每日求籤 · 第 ${i+1} 籤`, badge:luck, badgeColor:LUCK_COLOR[luck],
+      wish:w, poem, note:jie, when:date,
       shareText:`【玄問】第${i+1}籤 ${luck}\n${w?"所問："+w+"\n":""}${poem.join("　")}\n\n${jie}`});
   });
 }
@@ -1220,7 +1278,9 @@ function showGua(i){
    </div>`;
   $("#gShare").addEventListener("click",()=>{
     const w=$("#gAsk").value.trim();
-    share(`【玄問】${name}卦（${xiang} · 第${n}卦）\n${w?"所問："+w+"\n":""}卦辭：${ci}\n\n${jie}`);
+    shareCard({kind:`易經抽卦 · 第 ${n} 卦`, badge:`${name}　${xiang}`, badgeColor:"#8a5a1a",
+      wish:w, note:`卦辭：${ci}\n\n${jie}`, noteLabel:"卦 象", when:new Date(),
+      shareText:`【玄問】${name}卦（${xiang} · 第${n}卦）\n${w?"所問："+w+"\n":""}卦辭：${ci}\n\n${jie}`});
   });
 }
 $("#gBtn").addEventListener("click",drawGua);
@@ -1470,7 +1530,10 @@ function showMixed(draw, qi){
    </div></div>`;
   $("#tShare").addEventListener("click",()=>{
     const body=draw.map(d=>`${d.pos}：${d.card.zh}（${d.rev?'逆位':'正位'}）`).join("\n");
-    share(`【玄問 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n籤 · 第${qi+1}籤 ${luck}：${poem.join("　")}`);
+    shareCard({kind:"東西合參", wish:w, badge:luck, badgeColor:LUCK_COLOR[luck],
+      lines:draw.map(d=>`${d.pos} · ${d.card.zh}（${d.rev?"逆":"正"}）`),
+      note:`第 ${qi+1} 籤總結：${poem.join("　")} — ${jie}`, noteLabel:"籤 · 總結", when:new Date(),
+      shareText:`【玄問 · 東西合參】\n${w?"所問："+w+"\n":""}${body}\n籤 · 第${qi+1}籤 ${luck}：${poem.join("　")}`});
   });
   logEntry("spread:dongxi", draw.map(d=>d.card.zh+(d.rev?"(逆)":"(正)")).join("／")+`＋第${qi+1}籤`, w);
   requestAnimationFrame(()=>scrollToResult($("#tSlip")));
@@ -1490,13 +1553,15 @@ function showTarot(draw){
     const w=$("#tAsk").value.trim();
     const body=draw.map(d=>`${d.pos?d.pos+"：":""}${d.card.zh}（${d.rev?'逆位':'正位'}）${d.rev?d.card.rev:d.card.up}`).join("\n");
     const single=draw.length===1;
-    shareCard({kind:"塔羅占卜", cardImg: single?`cards/${draw[0].card.img}`:null,
-      title: single?draw[0].card.zh:"塔羅 · 三張牌",
-      badge: single?(draw[0].rev?"逆位":"正位"):null, badgeColor: draw[0].rev?"#8f2519":"#3f7a3a",
-      wish:w,
-      lines: single?null:draw.map(d=>`${d.pos}：${d.card.zh}${d.rev?"（逆）":"（正）"}`),
-      note: single?(draw[0].rev?draw[0].card.rev:draw[0].card.up):"",
-      date:cardDate(), shareText:`【玄問 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`});
+    shareCard(single
+      ? {kind:`塔羅占卜 · ${draw[0].card.zh}`, cardImg:`cards/${draw[0].card.img}`,
+         badge:draw[0].rev?"逆位":"正位", badgeColor:draw[0].rev?"#8f2519":"#3f7a3a", wish:w,
+         note:draw[0].rev?draw[0].card.rev:draw[0].card.up, noteLabel:"釋 義", when:new Date(),
+         shareText:`【玄問 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`}
+      : {kind:"塔羅 · 三張牌", wish:w,
+         lines:draw.map(d=>`${d.pos} · ${d.card.zh}（${d.rev?"逆":"正"}）`),
+         note:draw.map(d=>`${d.pos}：${d.rev?d.card.rev:d.card.up}`).join("\n"), noteLabel:"釋 義", when:new Date(),
+         shareText:`【玄問 · 塔羅】\n${w?"所問："+w+"\n":""}${body}`});
   });
   logEntry("tarot", draw.map(d=>`${d.card.zh}${d.rev?"(逆)":"(正)"}`).join("／"), $("#tAsk").value.trim());
   requestAnimationFrame(()=>scrollToResult($("#tSlip")));
@@ -1560,8 +1625,12 @@ function renderAura(){
      </div>
      <div class="acts"><button class="act share" id="auraShare">分享 ⤴</button></div>
    </div></div>`;
-  $("#auraShare").addEventListener("click",()=>share(
-    `【玄問 · 今日氣場 ${fmtI(now).replace(/-/g,"/")}】${a.zhixing}日｜${au.vibe}\n✅ 適合：${au.good.join("、")}\n⛔ 避免：${au.avoid.join("、")}\n🔮 日牌：${card.zh}（正位）${card.up}`));
+  $("#auraShare").addEventListener("click",()=>shareCard({
+    kind:"今日氣場", badge:`${a.zhixing}日`, badgeColor:"#8a5a1a",
+    cardImg:`cards/${card.img}`,
+    note:`${au.vibe}\n宜：${au.good.join("、")}\n忌：${au.avoid.join("、")}\n日牌 · ${card.zh}（正位）：${card.up}`,
+    noteLabel:"今 日", when:now,
+    shareText:`【玄問 · 今日氣場 ${fmtI(now).replace(/-/g,"/")}】${a.zhixing}日｜${au.vibe}\n✅ 適合：${au.good.join("、")}\n⛔ 避免：${au.avoid.join("、")}\n🔮 日牌：${card.zh}（正位）${card.up}`}));
 }
 
 /* ============================================================
@@ -1621,10 +1690,10 @@ function renderZFortune(){
      <div class="acts"><button class="act share" id="zShare">分享 ⤴</button></div>
    </div></div>`;
   $("#zShare").addEventListener("click",()=>shareCard({
-    kind:"今日運勢", title:`${z.sym} ${z.nm}`,
+    kind:"今日運勢", badge:`${z.sym} ${z.nm}`, badgeColor:"#8a5a1a",
     lines:[`整體 ${"★".repeat(avg)}${"☆".repeat(5-avg)}`,`愛情 ${"★".repeat(st.love)}${"☆".repeat(5-st.love)}`,
            `工作 ${"★".repeat(st.work)}${"☆".repeat(5-st.work)}`,`財運 ${"★".repeat(st.money)}${"☆".repeat(5-st.money)}`],
-    note:`${otx}\n幸運色 ${color}｜幸運數字 ${num}｜${tip}`, date:cardDate(now),
+    note:`${otx}\n幸運色 ${color}｜幸運數字 ${num}｜${tip}`, when:now,
     shareText:`【玄問 · ${z.nm}今日運勢 ${fmtI(now).replace(/-/g,"/")}】\n整體${"★".repeat(avg)} ${otx}\n愛情${"★".repeat(st.love)} ${tx.love}\n工作${"★".repeat(st.work)} ${tx.work}\n財運${"★".repeat(st.money)} ${tx.money}\n幸運色 ${color}｜幸運數字 ${num}`}));
 }
 $("#zGrid").addEventListener("click",e=>{
@@ -1666,8 +1735,11 @@ $("#pairBtn").addEventListener("click",()=>{
    </div></div>`;
   countUp($("#pairN"), score);
   setTimeout(()=>{ const bar=$("#pairBar"); if(bar) bar.style.width=score+"%"; }, 40);  // 觸發 width 過渡
-  $("#pairShare").addEventListener("click",()=>share(
-    `【玄問 · 星座配對】${A.nm} × ${B.nm}＝${score}分（${tier.name}）\n${tier.desc}`));
+  $("#pairShare").addEventListener("click",()=>shareCard({
+    kind:"星座配對", badge:`${score} 分 · ${tier.name}`, badgeColor:"#a4302a",
+    lines:[`${A.sym} ${A.nm}　×　${B.sym} ${B.nm}`],
+    note:`${A.el}象 × ${B.el}象。${tier.desc}\n相處：${tier.adv}`, noteLabel:"相 性", when:new Date(),
+    shareText:`【玄問 · 星座配對】${A.nm} × ${B.nm}＝${score}分（${tier.name}）\n${tier.desc}`}));
   logEntry("pair", `${A.nm}×${B.nm} ${score}分 ${tier.name}`);
 });
 
