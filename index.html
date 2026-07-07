@@ -855,111 +855,255 @@ const CN_DIGIT="〇一二三四五六七八九".split("");
 const cnNum = n => String(n).split("").map(d=>CN_DIGIT[+d]).join("");
 function cnMD(n){ if(n<10) return CN_DIGIT[n]; if(n===10) return "十";
   if(n<20) return "十"+CN_DIGIT[n-10]; const t=Math.floor(n/10),o=n%10; return CN_DIGIT[t]+"十"+(o?CN_DIGIT[o]:""); }
+const CARD_BODY='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
 const loadImg = src => new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; });
-function noiseDust(x,W,H){ for(let i=0;i<190;i++){ const px=Math.random()*W, py=Math.random()*H;
-  if(Math.min(px,W-px,py,H-py)>250 && Math.random()>0.14) continue;
-  x.globalAlpha=Math.random()*0.16; x.fillStyle=Math.random()>0.5?"#d7b566":"#8a6a3a";
-  x.fillRect(px,py,Math.random()*2+0.6,Math.random()*2+0.6); } x.globalAlpha=1; }
-function moonTop(x,cx,cy){ x.save(); x.strokeStyle="rgba(215,181,102,.32)"; x.lineWidth=1;
-  for(let a=0;a<14;a++){ const ang=a/14*Math.PI*2, r2=28+(a%2?9:0);
-    x.beginPath(); x.moveTo(cx+Math.cos(ang)*22,cy+Math.sin(ang)*22); x.lineTo(cx+Math.cos(ang)*r2,cy+Math.sin(ang)*r2); x.stroke(); }
-  x.fillStyle="#e3c882"; x.beginPath(); x.arc(cx,cy,14,0,7); x.fill();
-  x.fillStyle="#0c0906"; x.beginPath(); x.arc(cx+6,cy-3,13,0,7); x.fill(); x.restore(); }
-function medallion(x,cx,cy){ x.fillStyle="#7d1e13"; x.beginPath(); x.arc(cx,cy,19,0,7); x.fill();
-  x.strokeStyle="#e7cd82"; x.lineWidth=2; x.beginPath(); x.arc(cx,cy,19,0,7); x.stroke();
-  x.fillStyle="#e7cd82"; for(let a=0;a<6;a++){ const ang=a/6*Math.PI*2; x.beginPath(); x.arc(cx+Math.cos(ang)*7,cy+Math.sin(ang)*7,2.4,0,7); x.fill(); } }
-function sealStamp(x,cx,cy,s){ x.fillStyle="#b3261a"; rrect(x,cx-s/2,cy-s/2,s,s,8); x.fill();
-  x.strokeStyle="#e7cd82"; x.lineWidth=2; rrect(x,cx-s/2+3.5,cy-s/2+3.5,s-7,s-7,6); x.stroke();
-  x.fillStyle="#f6e9c8"; x.textAlign="center"; x.textBaseline="middle"; x.font=`700 ${Math.round(s*0.38)}px ${CARD_SERIF}`;
-  x.fillText("玄",cx,cy-s*0.2); x.fillText("問",cx,cy+s*0.22); x.textBaseline="alphabetic"; }
-function sectionDivider(x,cx,cy,label){ x.font=`26px ${CARD_SERIF}`; x.fillStyle="#8a5a2a"; x.textAlign="center";
-  const w=x.measureText(label).width, gap=w/2+22;
-  x.strokeStyle="rgba(150,110,50,.5)"; x.lineWidth=1.4;
-  x.beginPath(); x.moveTo(cx-gap-90,cy-8); x.lineTo(cx-gap,cy-8); x.moveTo(cx+gap,cy-8); x.lineTo(cx+gap+90,cy-8); x.stroke();
-  x.fillStyle="#b3261a"; x.beginPath(); x.arc(cx-gap-8,cy-8,3,0,7); x.arc(cx+gap+8,cy-8,3,0,7); x.fill();
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+function setFont(x,size,family=CARD_SERIF,weight=400){ x.font=`${weight} ${Math.round(size)}px ${family}`; }
+function fitFont(x,text,maxW,size,min,family=CARD_SERIF,weight=700){
+  let s=size; do{ setFont(x,s,family,weight); if(x.measureText(String(text)).width<=maxW) return s; s-=2; }while(s>=min);
+  return min;
+}
+function limitedRows(x,text,maxW,maxRows){
+  const rows=[];
+  String(text||"").split(/\n+/).map(s=>s.trim()).filter(Boolean).forEach(p=>rows.push(...wrapText(x,p,maxW)));
+  if(rows.length>maxRows){
+    rows.length=maxRows;
+    let last=rows[maxRows-1]||"";
+    while(last.length>1 && x.measureText(last+"…").width>maxW) last=last.slice(0,-1);
+    rows[maxRows-1]=last+"…";
+  }
+  return rows;
+}
+function edgeDust(x,W,H){ x.save();
+  for(let i=0;i<150;i++){
+    const px=Math.random()*W, py=Math.random()*H, edge=Math.min(px,W-px,py,H-py);
+    if(edge>260 && Math.random()>.08) continue;
+    x.globalAlpha=(edge<140?.12:.055)*Math.random();
+    x.fillStyle=Math.random()>.45?"#d7b566":"#7b5b2f";
+    x.fillRect(px,py,Math.random()*1.6+.35,Math.random()*1.6+.35);
+  }
+  x.restore();
+}
+function paperFiber(x,P){ x.save(); rrect(x,P.x,P.y,P.w,P.h,P.r); x.clip();
+  for(let i=0;i<70;i++){
+    const y=P.y+Math.random()*P.h, len=30+Math.random()*90;
+    x.globalAlpha=.025+Math.random()*.035; x.strokeStyle=Math.random()>.5?"#7d5a2a":"#ffffff";
+    x.lineWidth=.8; x.beginPath(); x.moveTo(P.x+Math.random()*P.w,y);
+    x.quadraticCurveTo(P.x+Math.random()*P.w,y+Math.random()*10-5,P.x+Math.random()*P.w+len,y+Math.random()*8-4); x.stroke();
+  }
+  x.restore();
+}
+function moonTop(x,cx,cy){ x.save();
+  const rg=x.createRadialGradient(cx,cy,4,cx,cy,86); rg.addColorStop(0,"rgba(215,181,102,.28)"); rg.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=rg; x.beginPath(); x.arc(cx,cy,86,0,7); x.fill();
+  x.strokeStyle="rgba(220,187,110,.66)"; x.lineWidth=2;
+  for(let a=0;a<24;a++){ const ang=a/24*Math.PI*2, r2=a%2?42:56;
+    x.beginPath(); x.moveTo(cx+Math.cos(ang)*26,cy+Math.sin(ang)*26); x.lineTo(cx+Math.cos(ang)*r2,cy+Math.sin(ang)*r2); x.stroke(); }
+  x.strokeStyle="rgba(215,181,102,.42)"; x.lineWidth=1.2; x.beginPath(); x.arc(cx,cy,22,0,7); x.stroke();
+  x.fillStyle="#e8cf8e"; x.beginPath(); x.arc(cx,cy,15,0,7); x.fill();
+  x.fillStyle="#0c0906"; x.beginPath(); x.arc(cx+7,cy-3,14,0,7); x.fill(); x.restore(); }
+// 如意流雲紋（背景角落，程序式）
+function ruyiCloud(x,cx,cy,r,alpha){
+  x.save(); x.strokeStyle=`rgba(205,168,90,${alpha})`; x.lineWidth=1.8; x.lineCap="round";
+  x.beginPath(); x.arc(cx,cy,r,Math.PI*.15,Math.PI*1.62); x.stroke();
+  x.beginPath(); x.arc(cx-r*1.42,cy+r*.42,r*.6,Math.PI*.42,Math.PI*1.95); x.stroke();
+  x.beginPath(); x.arc(cx+r*1.34,cy+r*.5,r*.48,Math.PI*1.06,Math.PI*2.72); x.stroke();
+  x.beginPath(); x.moveTo(cx+r*1.82,cy+r*.82); x.quadraticCurveTo(cx+r*3.1,cy+r*.95,cx+r*4.3,cy+r*.5); x.stroke();
+  x.restore(); }
+function medallion(x,cx,cy,r=20){ x.fillStyle="#8b2d22"; x.beginPath(); x.arc(cx,cy,r,0,7); x.fill();
+  x.strokeStyle="#e7cd82"; x.lineWidth=1.8; x.beginPath(); x.arc(cx,cy,r,0,7); x.stroke();
+  x.fillStyle="#e7cd82"; for(let a=0;a<7;a++){ const ang=a/7*Math.PI*2; x.beginPath(); x.arc(cx+Math.cos(ang)*7.5,cy+Math.sin(ang)*7.5,2,0,7); x.fill(); } }
+function sealStamp(x,cx,cy,s){ x.fillStyle="#a5271d"; rrect(x,cx-s/2,cy-s/2,s,s,7); x.fill();
+  x.strokeStyle="rgba(246,233,200,.88)"; x.lineWidth=1.5; rrect(x,cx-s/2+4,cy-s/2+4,s-8,s-8,5); x.stroke();
+  x.fillStyle="#f6e9c8"; x.textAlign="center"; x.textBaseline="middle"; setFont(x,s*.34,CARD_SERIF,700);
+  x.fillText("玄",cx,cy-s*.18); x.fillText("問",cx,cy+s*.2); x.textBaseline="alphabetic"; }
+function sectionDivider(x,cx,cy,label,w=360){ setFont(x,23,CARD_SERIF,700); x.textAlign="center";
+  const tw=x.measureText(label).width, gap=tw/2+18;
+  x.strokeStyle="rgba(139,94,42,.45)"; x.lineWidth=1.1; x.beginPath();
+  x.moveTo(cx-w/2,cy-8); x.lineTo(cx-gap,cy-8); x.moveTo(cx+gap,cy-8); x.lineTo(cx+w/2,cy-8); x.stroke();
   x.fillStyle="#8a5a2a"; x.fillText(label,cx,cy); }
-function cartouche(x,cx,cy,text,color){ x.font=`700 42px ${CARD_SERIF}`; const w=Math.max(200,x.measureText(text).width+110), h=80;
-  x.strokeStyle=color; x.lineWidth=3; rrect(x,cx-w/2,cy-h/2,w,h,22); x.stroke();
-  x.strokeStyle=color; x.lineWidth=1.4; rrect(x,cx-w/2+8,cy-h/2+8,w-16,h-16,15); x.stroke();
-  x.fillStyle=color; x.textAlign="center"; x.textBaseline="middle"; x.fillText(text,cx,cy+2); x.textBaseline="alphabetic"; }
-function vPoem(x,poem,cx,topY,color){ const colGap=64, chGap=56; x.font=`44px ${CARD_SERIF}`; x.fillStyle=color; x.textAlign="center";
-  const n=poem.length, tot=(n-1)*colGap;
+function cartouche(x,cx,cy,text,color,maxW){ const fs=fitFont(x,text,maxW-80,44,30,CARD_SERIF,700);
+  const w=clamp(x.measureText(text).width+86,190,maxW), h=72;
+  x.fillStyle="rgba(255,249,235,.42)"; rrect(x,cx-w/2,cy-h/2,w,h,20); x.fill();
+  x.strokeStyle=color; x.lineWidth=2.4; rrect(x,cx-w/2,cy-h/2,w,h,20); x.stroke();
+  x.strokeStyle="rgba(160,70,45,.4)"; x.lineWidth=1.2; rrect(x,cx-w/2+8,cy-h/2+8,w-16,h-16,14); x.stroke();
+  x.fillStyle=color; x.textAlign="center"; x.textBaseline="middle"; setFont(x,fs,CARD_SERIF,700); x.fillText(text,cx,cy+2); x.textBaseline="alphabetic"; }
+function drawPaper(x,P){ x.save();
+  x.shadowColor="rgba(0,0,0,.38)"; x.shadowBlur=26; x.shadowOffsetY=14;
+  rrect(x,P.x,P.y,P.w,P.h,P.r);
+  const pg=x.createLinearGradient(0,P.y,0,P.y+P.h); pg.addColorStop(0,"#f5e8cc"); pg.addColorStop(.55,"#efe0bd"); pg.addColorStop(1,"#e4ce9f");
+  x.fillStyle=pg; x.fill(); x.restore();
+  x.save(); rrect(x,P.x,P.y,P.w,P.h,P.r); x.clip();
+  x.fillStyle="#9f3227"; x.fillRect(P.x,P.y,P.w,P.band); x.fillRect(P.x,P.y+P.h-P.band,P.w,P.band);
+  paperFiber(x,P); x.restore();
+  x.strokeStyle="rgba(201,162,78,.58)"; x.lineWidth=1.8; rrect(x,P.x+13,P.y+13,P.w-26,P.h-26,14); x.stroke();
+  x.strokeStyle="rgba(100,60,25,.22)"; x.lineWidth=1; rrect(x,P.x+28,P.y+P.band+20,P.w-56,P.h-P.band*2-40,8); x.stroke();
+  medallion(x,P.x+P.w/2,P.y+P.band/2,19); medallion(x,P.x+P.w/2,P.y+P.h-P.band/2,19);
+}
+function drawFooter(x,W,H,when){
+  const FY=H-94, leftX=158;
+  const dateCn=cnNum(when.getFullYear())+"年　"+cnMD(when.getMonth()+1)+"月"+cnMD(when.getDate())+"日";
+  let lunarStr=""; try{ const l=lunarOf(when); lunarStr="農曆　"+T(l.getMonthInChinese())+"月"+T(l.getDayInChinese()); }catch(e){}
+  x.textAlign="left"; x.strokeStyle="rgba(201,162,78,.72)"; x.lineWidth=1.6;
+  x.beginPath(); x.arc(leftX,FY-7,9,0,7); x.stroke(); x.fillStyle="rgba(201,162,78,.72)";
+  x.beginPath(); x.arc(leftX,FY-7,3,0,7); x.fill();
+  setFont(x,23,CARD_SERIF,500); x.fillStyle="rgba(215,181,102,.82)"; x.fillText(dateCn,leftX+34,FY);
+  setFont(x,20,CARD_SERIF,400); x.fillStyle="rgba(160,132,70,.68)"; x.fillText(lunarStr,leftX+34,FY+31);
+  x.strokeStyle="rgba(201,162,78,.24)"; x.lineWidth=1; x.beginPath(); x.moveTo(W/2,FY-31); x.lineTo(W/2,FY+32); x.stroke();
+  x.fillStyle="rgba(201,162,78,.44)"; x.beginPath(); x.arc(W/2,FY+1,3,0,7); x.fill();
+  const sx=W-332, tx=sx+48; sealStamp(x,sx,FY,42);
+  x.textAlign="left"; x.fillStyle="rgba(215,181,102,.92)"; setFont(x,34,CARD_SERIF,700); x.fillText("玄問",tx,FY+4);
+  x.fillStyle="rgba(160,132,70,.58)"; setFont(x,15,CARD_BODY,500); x.fillText("xuanwen.vercel.app",tx,FY+29);
+}
+function drawNoteBox(x,P,y,bottom,label,note,maxRows=5){
+  if(!note) return y;
+  y=Math.max(y,P.y+P.band+235);
+  const bx=P.x+60, bw=P.w-120, avail=Math.max(92,bottom-y);
+  let fs=26, lh=37;
+  setFont(x,fs,CARD_BODY,500);
+  const rows=limitedRows(x,note,bw-52,Math.max(2,Math.min(maxRows,Math.floor((avail-70)/lh))));
+  const bh=Math.min(avail,rows.length*lh+54);
+  sectionDivider(x,P.x+P.w/2,y,label,P.w-260); y+=28;
+  x.fillStyle="rgba(255,248,232,.34)"; rrect(x,bx,y,bw,bh,8); x.fill();
+  x.strokeStyle="rgba(139,94,42,.38)"; x.lineWidth=1.2; rrect(x,bx,y,bw,bh,8); x.stroke();
+  x.textAlign="left"; x.fillStyle="#4b351e"; setFont(x,fs,CARD_BODY,500);
+  let ty=y+36; rows.forEach(row=>{ x.fillText(row,bx+26,ty); ty+=lh; });
+  x.textAlign="center"; return y+bh;
+}
+function drawVerticalPoem(x,poem,cx,topY,bottomY,color){
+  const maxLen=Math.max(...poem.map(l=>[...l].length),1), roomH=Math.max(180,bottomY-topY);
+  const fs=clamp(Math.floor(roomH/(maxLen+.6)),34,42), chGap=clamp(fs+9,42,54);
+  const colGap=clamp((620-120)/Math.max(poem.length,4),54,66), tot=(poem.length-1)*colGap;
+  setFont(x,fs,CARD_SERIF,700); x.fillStyle=color; x.textAlign="center";
   poem.forEach((line,i)=>{ const colX=cx+tot/2-i*colGap; [...line].forEach((ch,j)=>x.fillText(ch,colX,topY+j*chGap)); });
-  return topY + (Math.max(...poem.map(l=>[...l].length))-1)*chGap; }
+}
+function drawResultRows(x,P,rows,y,bottom){
+  const maxRows=Math.max(1,Math.min(rows.length,Math.floor((bottom-y)/58)));
+  const bx=P.x+90, bw=P.w-180; x.textAlign="center";
+  setFont(x,31,CARD_BODY,600);
+  rows.slice(0,maxRows).forEach((row,i)=>{
+    const yy=y+i*58;
+    x.fillStyle=i%2?"rgba(255,248,232,.18)":"rgba(255,248,232,.32)"; rrect(x,bx,yy-35,bw,46,8); x.fill();
+    const fs=fitFont(x,row,bw-42,31,23,CARD_BODY,600); setFont(x,fs,CARD_BODY,600);
+    x.fillStyle="#49331c"; x.fillText(row,P.x+P.w/2,yy-4);
+  });
+}
+function drawAuraCell(x,label,value,rx,ry,rw,rh){
+  x.fillStyle="rgba(255,248,232,.28)"; rrect(x,rx,ry,rw,rh,8); x.fill();
+  x.strokeStyle="rgba(139,94,42,.2)"; x.lineWidth=1; rrect(x,rx,ry,rw,rh,8); x.stroke();
+  x.textAlign="left"; x.fillStyle="#8a5a2a"; setFont(x,17,CARD_BODY,700); x.fillText(label,rx+18,ry+23);
+  x.fillStyle="#49331c"; const fs=fitFont(x,value,rw-36,22,15,CARD_BODY,600);
+  setFont(x,fs,CARD_BODY,600); x.fillText(value,rx+18,ry+48);
+}
+function drawAuraPanel(x,P,cfg,im,y,bottom){
+  const au=cfg.aura||{}, bx=P.x+64, bw=P.w-128;
+  sectionDivider(x,P.x+P.w/2,y+4,"今日主調",P.w-300); y+=34;
+  x.fillStyle="rgba(255,248,232,.32)"; rrect(x,bx,y,bw,66,9); x.fill();
+  x.textAlign="center"; x.fillStyle="#4b351e"; setFont(x,25,CARD_BODY,700);
+  limitedRows(x,au.vibe||"",bw-54,2).forEach((row,i)=>x.fillText(row,P.x+P.w/2,y+28+i*30));
+  y+=90;
+
+  const cardW=im?150:0, cardGap=24, rowTop=y;
+  let cardH=0;
+  if(im){
+    const ratio=im.naturalHeight/im.naturalWidth; cardH=cardW*ratio;
+    const ix=bx+18, iy=rowTop;
+    x.save(); x.shadowColor="rgba(0,0,0,.24)"; x.shadowBlur=14; x.shadowOffsetY=8;
+    x.fillStyle="#1b120b"; rrect(x,ix-6,iy-6,cardW+12,cardH+12,9); x.fill(); x.restore();
+    x.save(); x.strokeStyle="rgba(160,58,42,.78)"; x.lineWidth=2; rrect(x,ix-4,iy-4,cardW+8,cardH+8,8); x.stroke();
+    rrect(x,ix,iy,cardW,cardH,5); x.clip(); x.drawImage(im,ix,iy,cardW,cardH); x.restore();
+  }
+  const rx=im?bx+18+cardW+cardGap:bx, rw=im?bw-18-cardW-cardGap:bw;
+  x.textAlign="left"; x.fillStyle="#7a1e14"; setFont(x,27,CARD_SERIF,700);
+  const cardLine=`日牌 · ${au.cardName||"—"}（正位）`;
+  fitFont(x,cardLine,rw,27,19,CARD_SERIF,700); x.fillText(cardLine,rx,rowTop+8);
+  x.fillStyle="#8a6a3a"; setFont(x,18,CARD_BODY,500); if(au.cardKw) x.fillText(au.cardKw,rx,rowTop+36);
+  x.fillStyle="#4b351e"; setFont(x,22,CARD_BODY,500);
+  limitedRows(x,au.cardMeaning||"",rw,3).forEach((row,i)=>x.fillText(row,rx,rowTop+72+i*32));
+  const chipY=rowTop+180, chipH=58, chipGap=10, chipW=(rw-chipGap)/2;
+  drawAuraCell(x,"適合",(au.good||[]).join("、")||"—",rx,chipY,chipW,chipH);
+  drawAuraCell(x,"避免",(au.avoid||[]).join("、")||"—",rx+chipW+chipGap,chipY,chipW,chipH);
+  y=Math.max(rowTop+cardH,rowTop+chipY-rowTop+chipH)+28;
+
+  sectionDivider(x,P.x+P.w/2,y+4,"今日參照",P.w-300); y+=32;
+  const cellGap=10, cellW=(bw-cellGap)/2, cellH=58;
+  drawAuraCell(x,"節氣",au.jieqi||"—",bx,y,cellW,cellH);
+  drawAuraCell(x,"月相",au.moon||"—",bx+cellW+cellGap,y,cellW,cellH);
+  y+=cellH+10;
+  drawAuraCell(x,"幸運色",au.color||"—",bx,y,cellW,cellH);
+  drawAuraCell(x,"開運小語",au.tip||"—",bx+cellW+cellGap,y,cellW,cellH);
+  return Math.min(y+cellH,bottom);
+}
 
 async function drawShareCard(cfg){
   const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;
-  const x=c.getContext("2d");
-  // 背景：深黑棕漸層 ＋ 頂部微光 ＋ 程序式金粉紋
-  let g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,"#1a130b");g.addColorStop(.5,"#100c08");g.addColorStop(1,"#080605");
+  const x=c.getContext("2d"); x.textBaseline="alphabetic";
+  let g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,"#1a130b");g.addColorStop(.5,"#0f0b08");g.addColorStop(1,"#070504");
   x.fillStyle=g; x.fillRect(0,0,W,H);
-  g=x.createRadialGradient(W/2,60,40,W/2,60,820); g.addColorStop(0,"rgba(215,181,102,.14)");g.addColorStop(1,"rgba(0,0,0,0)");
-  x.fillStyle=g; x.fillRect(0,0,W,H);
-  noiseDust(x,W,H);
-  moonTop(x,W/2,116);
-  // 中央紙籤卡
-  const PX=94,PY=176,PW=W-188,PH=986, ST=46;
-  x.save(); rrect(x,PX,PY,PW,PH,22);
-  let pg=x.createLinearGradient(0,PY,0,PY+PH); pg.addColorStop(0,"#f4e7c8");pg.addColorStop(1,"#e8d3a4");
-  x.fillStyle=pg; x.fill(); x.clip();
-  x.fillStyle="#a4302a"; x.fillRect(PX,PY,PW,ST); x.fillRect(PX,PY+PH-ST,PW,ST);   // 朱紅上下壓條
-  x.globalAlpha=.5; noiseDust(x,W,H); x.globalAlpha=1;                              // 紙面微紋
-  x.restore();
-  x.strokeStyle="rgba(150,110,50,.55)"; x.lineWidth=2; rrect(x,PX+14,PY+14,PW-28,PH-28,14); x.stroke();  // 金框
-  medallion(x,W/2,PY+ST/2); medallion(x,W/2,PY+PH-ST/2);
-  // 預載塔羅牌面（若有）
+  g=x.createRadialGradient(W/2,70,30,W/2,70,780); g.addColorStop(0,"rgba(215,181,102,.16)");g.addColorStop(.46,"rgba(120,72,35,.06)");g.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=g; x.fillRect(0,0,W,H); edgeDust(x,W,H);
+  ruyiCloud(x,W-150,158,26,.34); ruyiCloud(x,W-70,236,16,.24); ruyiCloud(x,W-235,96,13,.2);
+  ruyiCloud(x,128,H-190,24,.32); ruyiCloud(x,236,H-128,15,.22); ruyiCloud(x,64,H-282,12,.18);
+  moonTop(x,W/2,112);
+  const P={x:158,y:194,w:764,h:958,band:42,r:20}; drawPaper(x,P);
+
   let im=null; if(cfg.cardImg){ try{ im=await loadImg(cfg.cardImg); }catch(e){} }
+  const hasMain=!!(im || (cfg.poem&&cfg.poem.length) || (cfg.lines&&cfg.lines.length));
+  const contentBottom=P.y+P.h-P.band-62;
+  let y=P.y+P.band+78;
+  x.textAlign="center"; x.fillStyle="#2f2418"; setFont(x,60,CARD_SERIF,700); x.fillText("玄問",W/2,y);
+  if(cfg.kind){ const fs=fitFont(x,cfg.kind,P.w-220,25,18,CARD_BODY,500); setFont(x,fs,CARD_BODY,500); x.fillStyle="#8b6630"; x.fillText(cfg.kind,W/2,y+38); }
+  y+=86;
+  if(cfg.badge){ cartouche(x,W/2,y+18,cfg.badge,cfg.badgeColor||"#a4302a",P.w-180); y+=88; }
+  if(cfg.wish){ x.fillStyle="#8e5333"; setFont(x,23,CARD_BODY,500);
+    const wishRows=limitedRows(x,"所問 · "+cfg.wish,P.w-180,1); x.fillText(wishRows[0],W/2,y); y+=34; }
+  y+=6;
+  if(cfg.feature==="aura"){
+    drawAuraPanel(x,P,cfg,im,y,contentBottom);
+    drawFooter(x,W,H,cfg.when||new Date());
+    return await new Promise(res=>c.toBlob(res,"image/png"));
+  }
 
-  let y=PY+ST+92;
-  // 玄問 字標（墨色）＋兩側朱紅小鑽
-  x.textAlign="center"; x.fillStyle="#3a2a15"; x.font=`700 66px ${CARD_SERIF}`; x.fillText("玄　問",W/2,y);
-  x.fillStyle="#b3261a"; [ -196,196 ].forEach(dx=>{ x.save(); x.translate(W/2+dx,y-20); x.rotate(Math.PI/4); x.fillRect(-6,-6,12,12); x.restore(); });
-  if(cfg.kind){ x.fillStyle="#9a7434"; x.font=`27px ${CARD_SERIF}`; x.fillText(cfg.kind,W/2,y+40); }
-  y+=92;
-  if(cfg.badge){ cartouche(x,W/2,y+18,cfg.badge,cfg.badgeColor||"#a4302a"); y+=92; }
-  if(cfg.wish){ x.fillStyle="#9a5a3a"; x.font=`28px ${CARD_SERIF}`; x.fillText("所問 · "+wrapText(x,cfg.wish,PW-160)[0],W/2,y); y+=44; }
+  const noteRows = im ? 4 : (cfg.poem ? 4 : (cfg.lines ? 5 : 10));
+  let noteTop=contentBottom;
+  if(cfg.note && hasMain){
+    setFont(x,26,CARD_BODY,500);
+    const rows=limitedRows(x,cfg.note,P.w-172,noteRows);
+    noteTop=contentBottom-(rows.length*37+86);
+  }
+  const mainBottom=cfg.note&&hasMain ? noteTop-54 : contentBottom;
 
-  if(im){ const iw=300, ih=iw*im.naturalHeight/im.naturalWidth, ix=(W-iw)/2, iy=y+6;
-    x.save(); x.strokeStyle="#a4302a"; x.lineWidth=3; rrect(x,ix-5,iy-5,iw+10,ih+10,9); x.stroke();
-    rrect(x,ix,iy,iw,ih,6); x.clip(); x.drawImage(im,ix,iy,iw,ih); x.restore(); y=iy+ih+34; }
-  else if(cfg.poem&&cfg.poem.length){ sectionDivider(x,W/2,y,"籤 詩"); y+=52; y=vPoem(x,cfg.poem,W/2,y,"#3c2a16")+70; }
-  else if(cfg.lines&&cfg.lines.length){ y+=14; x.font=`38px ${CARD_SERIF}`; x.fillStyle="#4a3620";
-    cfg.lines.forEach(l=>{ x.fillText(l,W/2,y); y+=60; }); y+=6; }
+  if(im){
+    const ratio=im.naturalHeight/im.naturalWidth, maxH=clamp(mainBottom-y-8,150,360);
+    let iw=260, ih=iw*ratio; if(ih>maxH){ ih=maxH; iw=ih/ratio; }
+    iw=clamp(iw,130,282); ih=iw*ratio;
+    if(ih>maxH){ ih=maxH; iw=ih/ratio; }
+    const ix=(W-iw)/2, iy=y+2;
+    x.save(); x.shadowColor="rgba(0,0,0,.28)"; x.shadowBlur=16; x.shadowOffsetY=9;
+    x.fillStyle="#1b120b"; rrect(x,ix-7,iy-7,iw+14,ih+14,10); x.fill(); x.restore();
+    x.save(); x.strokeStyle="rgba(160,58,42,.82)"; x.lineWidth=2.2; rrect(x,ix-5,iy-5,iw+10,ih+10,9); x.stroke();
+    rrect(x,ix,iy,iw,ih,6); x.clip(); x.drawImage(im,ix,iy,iw,ih); x.restore();
+  }else if(cfg.poem&&cfg.poem.length){
+    sectionDivider(x,W/2,y+4,"籤 詩",P.w-310); y+=52;
+    drawVerticalPoem(x,cfg.poem,W/2,y,mainBottom,"#332617");
+  }else if(cfg.lines&&cfg.lines.length){
+    sectionDivider(x,W/2,y+4,cfg.noteLabel==="相 性"?"配 對":"結 果",P.w-310); y+=56;
+    drawResultRows(x,P,cfg.lines,y,mainBottom);
+  }
 
-  if(cfg.note){ sectionDivider(x,W/2,y,cfg.noteLabel||"籤 解"); y+=46;
-    const bx=PX+56, bw=PW-112;
-    x.font=`30px ${CARD_SERIF}`;                       // 先設字型再量，避免換行寬度算錯
-    const rows=wrapText(x,cfg.note,bw-58); const bh=rows.length*44+38;
-    x.strokeStyle="rgba(150,110,50,.45)"; x.lineWidth=1.4; rrect(x,bx,y-8,bw,bh,10); x.stroke();
-    x.fillStyle="#43301a"; x.textAlign="left";
-    let ty=y+32; rows.forEach(l=>{ x.fillText(l,bx+29,ty); ty+=44; }); x.textAlign="center"; }
-
-  // Footer lockup（左 日期/農曆 · 中 分隔 · 右 印章+玄問+極淡 domain）
-  const when=cfg.when||new Date(), FY=H-96;
-  const dateCn=cnNum(when.getFullYear())+"年　"+cnMD(when.getMonth()+1)+"月"+cnMD(when.getDate())+"日";
-  let lunarStr=""; try{ const l=lunarOf(when); lunarStr="農曆　"+T(l.getMonthInChinese())+"月"+T(l.getDayInChinese()); }catch(e){}
-  x.textAlign="left"; x.fillStyle="#9a8043"; x.font=`27px ${CARD_SERIF}`;
-  x.beginPath(); x.arc(PX+18,FY-8,9,0,7); x.strokeStyle="#9a8043"; x.lineWidth=2; x.stroke();
-  x.fillStyle="#9a8043"; x.beginPath(); x.arc(PX+18,FY-8,3,0,7); x.fill();
-  x.fillStyle="#a88b46"; x.fillText(dateCn,PX+40,FY); x.fillStyle="#8a7038"; x.fillText(lunarStr,PX+40,FY+34);
-  x.strokeStyle="rgba(201,162,78,.28)"; x.lineWidth=1; x.beginPath(); x.moveTo(W/2,FY-30); x.lineTo(W/2,FY+34); x.stroke();
-  x.fillStyle="rgba(201,162,78,.5)"; x.beginPath(); x.arc(W/2,FY+2,3,0,7); x.fill();
-  sealStamp(x,W-296,FY+2,52);
-  x.textAlign="left"; x.fillStyle="#d7b566"; x.font=`700 44px ${CARD_SERIF}`; x.fillText("玄問",W-256,FY+8);
-  x.fillStyle="rgba(160,132,70,.72)"; x.font=`19px ${CARD_SERIF}`; x.textAlign="left";
-  x.save(); x.translate(W-256,FY+34); x.fillText("x u a n w e n . v e r c e l . a p p",0,0); x.restore();
-
+  if(cfg.note) drawNoteBox(x,P,hasMain?noteTop:y,contentBottom,cfg.noteLabel||"釋 義",cfg.note,noteRows);
+  drawFooter(x,W,H,cfg.when||new Date());
   return await new Promise(res=>c.toBlob(res,"image/png"));
 }
 async function shareCard(cfg){
   try{
     const blob=await drawShareCard(cfg);
-    const file=new File([blob],"xuanji.png",{type:"image/png"});
+    const file=new File([blob],"xuanwen.png",{type:"image/png"});
     if(navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file], text:cfg.shareText||""}); return;
     }
     const url=URL.createObjectURL(blob);
-    const a=document.createElement("a"); a.href=url; a.download="xuanji.png"; document.body.appendChild(a); a.click(); a.remove();
+    const a=document.createElement("a"); a.href=url; a.download="xuanwen.png"; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),4000); toast("圖卡已存下，可分享給朋友 🧧");
   }catch(e){ if(cfg.shareText) share(cfg.shareText); else toast("圖卡產生失敗"); }
 }
@@ -1626,11 +1770,12 @@ function renderAura(){
      <div class="acts"><button class="act share" id="auraShare">分享 ⤴</button></div>
    </div></div>`;
   $("#auraShare").addEventListener("click",()=>shareCard({
-    kind:"今日氣場", badge:`${a.zhixing}日`, badgeColor:"#8a5a1a",
+    feature:"aura", kind:"今日氣場", badge:`${a.zhixing}日`, badgeColor:"#8a5a1a",
     cardImg:`cards/${card.img}`,
-    note:`${au.vibe}\n宜：${au.good.join("、")}\n忌：${au.avoid.join("、")}\n日牌 · ${card.zh}（正位）：${card.up}`,
-    noteLabel:"今 日", when:now,
-    shareText:`【玄問 · 今日氣場 ${fmtI(now).replace(/-/g,"/")}】${a.zhixing}日｜${au.vibe}\n✅ 適合：${au.good.join("、")}\n⛔ 避免：${au.avoid.join("、")}\n🔮 日牌：${card.zh}（正位）${card.up}`}));
+    aura:{vibe:au.vibe, good:au.good, avoid:au.avoid, jieqi:a.jieqiNow||"—", moon, color, tip,
+      cardName:card.zh, cardKw:card.kw, cardMeaning:card.up},
+    when:now,
+    shareText:`【玄問 · 今日氣場 ${fmtI(now).replace(/-/g,"/")}】${a.zhixing}日｜${au.vibe}\n✅ 適合：${au.good.join("、")}\n⛔ 避免：${au.avoid.join("、")}\n🌙 ${a.jieqiNow||"—"}｜${moon}｜幸運色 ${color}｜${tip}\n🔮 日牌：${card.zh}（正位）${card.up}`}));
 }
 
 /* ============================================================
