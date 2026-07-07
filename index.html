@@ -78,6 +78,10 @@
   @keyframes settle{0%{transform:translateY(-7px);}55%{transform:translateY(3px);}100%{transform:translateY(0);}}
   @keyframes pulseGlow{0%,100%{filter:drop-shadow(0 0 3px var(--glow-gold));}50%{filter:drop-shadow(0 0 11px var(--glow-gold));}}
   @keyframes landRipple{0%{transform:translate(-50%,-50%) scale(.25);opacity:.85;}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0;}}
+  @keyframes reelFlash{0%{box-shadow:0 0 22px var(--red-glow),inset 0 0 40px rgba(0,0,0,.6);}
+    28%{box-shadow:0 0 42px var(--glow-gold),inset 0 0 44px rgba(215,181,102,.28);}
+    100%{box-shadow:0 0 22px var(--red-glow),inset 0 0 40px rgba(0,0,0,.6);}}
+  .reel.flash{animation:reelFlash .7s ease-out;}
   .animpop{animation:pop var(--motion-fast) var(--ease-settle);}
   .glow-breathe{animation:pulseGlow 3.4s ease-in-out infinite;}
 
@@ -359,7 +363,8 @@
   .scorenum{font-size:52px;font-weight:700;color:#7a1e14;line-height:1.1;}
   .scoretier{font-size:16px;font-weight:700;color:#b3261a;letter-spacing:3px;}
   .scorebar{height:8px;border-radius:4px;background:rgba(120,60,20,.15);margin:10px 12px 0;overflow:hidden;}
-  .scorebar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#c65a10,#b3261a);}
+  .scorebar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#c65a10,#b3261a);
+    width:0;transition:width .7s var(--ease-out);}
   .moonbig{text-align:center;padding:6px 0 2px;}
   .moonbig .mj{font-size:64px;line-height:1.15;filter:drop-shadow(0 0 14px rgba(215,181,102,.35));}
   .moonbig .mn2{font-size:20px;font-weight:700;color:#7a1e14;margin-top:4px;letter-spacing:2px;}
@@ -702,6 +707,15 @@ function anim(el, cls, fallbackMs=1000){
 }
 // 重播一次性動畫（先移除 class、強制 reflow、再加回）
 function replay(el, cls){ if(!el)return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+// 數字 count-up（rAF 動畫 + setTimeout 保底終值，避免節流時卡在中途）
+function countUp(el, target, ms=750){
+  if(!el) return;
+  if(reduceMotion()){ el.textContent=target; return; }
+  el.textContent=0; const t0=performance.now();
+  const tick=now=>{ const p=Math.min(1,(now-t0)/ms); el.textContent=Math.round(target*(1-Math.pow(1-p,3))); if(p<1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  setTimeout(()=>{ el.textContent=target; }, ms+120);
+}
 const reduceMotion = ()=>{ try{ return matchMedia("(prefers-reduced-motion:reduce)").matches; }catch(e){ return false; } };
 
 // SVG 半月筊杯（朱紅 lacquer / 深木；金邊；同源、可縮放；uid 讓漸層 id 不衝突）
@@ -922,6 +936,7 @@ function drawQian(){
       setTimeout(()=>requestAnimationFrame(spin), gap);
     }else{
       setQReel(target); qSpinning=false; $("#qBtn").disabled=false;
+      replay($("#qReel"),"flash");
       buzz([15,40,15]); showQian(target, qDrawDate);
       logEntry("qian", `第 ${target+1} 籤 ${QIAN[target][1]}`, $("#qAsk").value.trim());
       if(qMode==="today") LS.set("xj_qian",{date:fmtI(qDrawDate),lot:target});
@@ -1009,6 +1024,7 @@ function drawGua(){
       setTimeout(()=>requestAnimationFrame(spin),gap);
     }else{
       setGReel(target); gSpinning=false; $("#gBtn").disabled=false;
+      replay($("#gReel"),"flash");
       buzz([15,40,15]); showGua(target);
       logEntry("gua", `${GUA[target][1]}卦（第 ${GUA[target][0]} 卦）`, $("#gAsk").value.trim());
       requestAnimationFrame(()=>$("#gSlip").scrollIntoView({behavior:"smooth",block:"start"}));
@@ -1283,7 +1299,7 @@ function renderAura(){
      <div class="auraline good"><span class="lb">今日適合</span>${g}</div>
      <div class="auraline bad"><span class="lb">今日避免</span>${b}</div>
      <div class="jie-t serif" style="margin-top:13px;">今日指引 · 一張日牌</div>
-     <div class="auracard">
+     <div class="auracard animpop">
        <img src="cards/${card.img}" alt="${card.zh}" loading="lazy">
        <div><div class="nm">${card.zh}<span style="font-size:12px;color:#8a6a3a;font-weight:400;">（正位）</span></div>
        <div class="kw2">${card.kw}</div><div class="mn">${card.up}</div></div>
@@ -1386,9 +1402,9 @@ $("#pairBtn").addEventListener("click",()=>{
    <div class="slip"><div class="stub"></div><div class="body">
      <div class="scorewrap">
        <div style="font-size:15px;color:#8a6a3a;margin-bottom:2px;">${A.sym}${A.nm} × ${B.sym}${B.nm}</div>
-       <div class="scorenum">${score}<span style="font-size:20px;">分</span></div>
+       <div class="scorenum"><span id="pairN">0</span><span style="font-size:20px;">分</span></div>
        <div class="scoretier serif">${tier.name}</div>
-       <div class="scorebar"><i style="width:${score}%"></i></div>
+       <div class="scorebar"><i id="pairBar"></i></div>
      </div>
      <div class="jie-t serif">相性解析</div>
      <div class="jie">${A.el}象（${A.trait}）遇上${B.el}象（${B.trait}）。${tier.desc}</div>
@@ -1396,6 +1412,8 @@ $("#pairBtn").addEventListener("click",()=>{
      <div class="jie">${tier.adv}</div>
      <div class="acts"><button class="act share" id="pairShare">分享 ⤴</button></div>
    </div></div>`;
+  countUp($("#pairN"), score);
+  setTimeout(()=>{ const bar=$("#pairBar"); if(bar) bar.style.width=score+"%"; }, 40);  // 觸發 width 過渡
   $("#pairShare").addEventListener("click",()=>share(
     `【玄機籤閣 · 星座配對】${A.nm} × ${B.nm}＝${score}分（${tier.name}）\n${tier.desc}`));
   logEntry("pair", `${A.nm}×${B.nm} ${score}分 ${tier.name}`);
@@ -1426,7 +1444,7 @@ function renderSky(){
   $("#skyBody").innerHTML=`
    <div class="slip"><div class="stub"></div><div class="body">
      <div class="moonbig">
-       <div class="mj">${moonEmoji(l.getDay())}</div>
+       <div class="mj glow-breathe">${moonEmoji(l.getDay())}</div>
        <div class="mn2 serif">今夜月相 · ${yx}</div>
        <div class="md2">農曆${T(l.getMonthInChinese())}月${T(l.getDayInChinese())} · 下個新月 ${nextNew} · 下個滿月 ${nextFull}</div>
      </div>
